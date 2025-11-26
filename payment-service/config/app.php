@@ -123,4 +123,16 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Service API Key
+    |--------------------------------------------------------------------------
+    |
+    | This key is used for authentication between microservices.
+    | Set this to a secure random string in production.
+    |
+    */
+
+    'service_api_key' => env('SERVICE_API_KEY'),
+
 ];

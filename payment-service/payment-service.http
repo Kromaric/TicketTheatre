@@ -1,0 +1,235 @@
+### Payment Service - Tests HTTP
+### Utilisez ce fichier avec VS Code REST Client ou IntelliJ HTTP Client
+
+@baseUrl = http://localhost:8000/api
+@paymentIntentId = pi_test_example
+@paymentId = 1
+@userId = 1
+
+### Health Check
+GET {{baseUrl}}/health
+
+### ============================================
+### CRÉATION DE PAIEMENT
+### ============================================
+
+### 1. Créer un Payment Intent
+POST {{baseUrl}}/payments
+Content-Type: application/json
+
+{
+  "amount": 50.00,
+  "currency": "eur",
+  "user_id": 1,
+  "order_id": 123,
+  "customer_email": "customer@example.com",
+  "description": "Achat de 2 billets de cinéma",
+  "metadata": {
+    "ticket_ids": [1, 2],
+    "event_id": 456
+  }
+}
+
+### 2. Créer un Payment Intent (montant minimum)
+POST {{baseUrl}}/payments
+Content-Type: application/json
+
+{
+  "amount": 0.50,
+  "currency": "eur",
+  "user_id": 2,
+  "customer_email": "test@example.com"
+}
+
+### 3. Créer un Payment Intent (USD)
+POST {{baseUrl}}/payments
+Content-Type: application/json
+
+{
+  "amount": 100.00,
+  "currency": "usd",
+  "user_id": 3,
+  "customer_email": "us-customer@example.com",
+  "description": "US Payment"
+}
+
+### ============================================
+### VALIDATION - CAS D'ERREUR
+### ============================================
+
+### 4. Erreur: Montant manquant
+POST {{baseUrl}}/payments
+Content-Type: application/json
+
+{
+  "currency": "eur",
+  "user_id": 1
+}
+
+### 5. Erreur: User ID manquant
+POST {{baseUrl}}/payments
+Content-Type: application/json
+
+{
+  "amount": 50.00,
+  "currency": "eur"
+}
+
+### 6. Erreur: Montant négatif
+POST {{baseUrl}}/payments
+Content-Type: application/json
+
+{
+  "amount": -10,
+  "currency": "eur",
+  "user_id": 1
+}
+
+### 7. Erreur: Devise invalide
+POST {{baseUrl}}/payments
+Content-Type: application/json
+
+{
+  "amount": 50.00,
+  "currency": "xxx",
+  "user_id": 1
+}
+
+### ============================================
+### CONFIRMATION DE PAIEMENT
+### ============================================
+
+### 8. Confirmer un paiement
+POST {{baseUrl}}/payments/{{paymentIntentId}}/confirm
+Content-Type: application/json
+
+{
+  "payment_method_id": "pm_card_visa"
+}
+
+### ============================================
+### CONSULTATION DE PAIEMENTS
+### ============================================
+
+### 9. Récupérer un paiement par ID
+GET {{baseUrl}}/payments/{{paymentId}}
+
+### 10. Récupérer tous les paiements d'un utilisateur
+GET {{baseUrl}}/payments/user/{{userId}}
+
+### ============================================
+### ANNULATION DE PAIEMENT
+### ============================================
+
+### 11. Annuler un paiement
+POST {{baseUrl}}/payments/{{paymentIntentId}}/cancel
+
+### ============================================
+### REMBOURSEMENTS
+### ============================================
+
+### 12. Remboursement complet
+POST {{baseUrl}}/payments/{{paymentId}}/refund
+Content-Type: application/json
+
+{
+  "reason": "requested_by_customer"
+}
+
+### 13. Remboursement partiel
+POST {{baseUrl}}/payments/{{paymentId}}/refund
+Content-Type: application/json
+
+{
+  "amount": 25.00,
+  "reason": "requested_by_customer"
+}
+
+### 14. Remboursement - Fraude
+POST {{baseUrl}}/payments/{{paymentId}}/refund
+Content-Type: application/json
+
+{
+  "reason": "fraudulent"
+}
+
+### 15. Remboursement - Duplicate
+POST {{baseUrl}}/payments/{{paymentId}}/refund
+Content-Type: application/json
+
+{
+  "reason": "duplicate"
+}
+
+### ============================================
+### WEBHOOKS STRIPE (Simulation)
+### ============================================
+
+### 16. Webhook - Payment Intent Succeeded
+POST {{baseUrl}}/webhooks/stripe
+Content-Type: application/json
+Stripe-Signature: test_signature
+
+{
+  "id": "evt_test_webhook",
+  "object": "event",
+  "type": "payment_intent.succeeded",
+  "data": {
+    "object": {
+      "id": "pi_test_example",
+      "object": "payment_intent",
+      "amount": 5000,
+      "currency": "eur",
+      "status": "succeeded"
+    }
+  }
+}
+
+### 17. Webhook - Payment Intent Failed
+POST {{baseUrl}}/webhooks/stripe
+Content-Type: application/json
+Stripe-Signature: test_signature
+
+{
+  "id": "evt_test_webhook_failed",
+  "object": "event",
+  "type": "payment_intent.payment_failed",
+  "data": {
+    "object": {
+      "id": "pi_test_example",
+      "object": "payment_intent",
+      "amount": 5000,
+      "currency": "eur",
+      "status": "failed"
+    }
+  }
+}
+
+### ============================================
+### SCÉNARIOS COMPLETS
+### ============================================
+
+### 18. Scénario: Paiement complet pour événement
+# Étape 1: Créer le payment intent
+POST {{baseUrl}}/payments
+Content-Type: application/json
+
+{
+  "amount": 150.00,
+  "currency": "eur",
+  "user_id": 1,
+  "order_id": 789,
+  "customer_email": "john.doe@example.com",
+  "description": "3 billets - Concert Rock Festival",
+  "metadata": {
+    "event_name": "Rock Festival 2024",
+    "ticket_ids": [101, 102, 103],
+    "seat_numbers": ["A1", "A2", "A3"]
+  }
+}
+
+### Notes:
+### - Remplacez {{paymentIntentId}} par un vrai ID retourné par Stripe
+### - Remplacez {{paymentId}} par un vrai ID de paiement en base
+### - Pour les webhooks, utilisez Stripe CLI pour des tests réels:
+###   stripe listen --forward-to http://localhost:8000/api/webhooks/stripe

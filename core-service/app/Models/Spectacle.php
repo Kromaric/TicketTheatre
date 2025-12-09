@@ -2,25 +2,54 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Spectacle extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'title',
         'description',
         'duration',
-        'price',
+        'base_price',
         'image_url',
-        'date_seance',
+        'poster_url',
+        'trailer_url',
         'language',
         'age_restriction',
-        'hall_id'
+        'category_id',
+        'director',
+        'actors',
+        'is_published',
+        'status',
     ];
 
-    public function hall()
+    protected function casts(): array
     {
-        return $this->belongsTo(Hall::class);
+        return [
+            'duration' => 'integer',
+            'base_price' => 'decimal:2',
+            'age_restriction' => 'integer',
+            'actors' => 'array',
+            'is_published' => 'boolean',
+        ];
     }
-    
+
+    // Relations
+    public function category()
+    {
+        return $this->belongsTo(Category::class);
+    }
+
+    public function seances()
+    {
+        return $this->hasMany(Seance::class);
+    }
+
+    public function reservations()
+    {
+        return $this->hasManyThrough(Reservation::class, Seance::class);
+    }
 }

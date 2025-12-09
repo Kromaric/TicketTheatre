@@ -2,36 +2,49 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Reservation extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'user_id',
-        'spectacle_id',
-        'seat_number',
-        'nbr_places',
-        'date',
-        'date_seance',
-        'status',
+        'seance_id',
+        'booking_reference',
+        'seats',
+        'quantity',
         'total_price',
-        'hall_id',
-
+        'status',
+        'payment_status',
+        'payment_id',
+        'expires_at',
+        'confirmed_at',
+        'cancelled_at',
+        'cancellation_reason',
     ];
 
+    protected function casts(): array
+    {
+        return [
+            'seats' => 'array', // null pour placement libre, ["A12", "A13"] pour places assignées
+            'quantity' => 'integer',
+            'total_price' => 'decimal:2',
+            'expires_at' => 'datetime',
+            'confirmed_at' => 'datetime',
+            'cancelled_at' => 'datetime',
+        ];
+    }
+
+    // Relations
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    public function spectacle()
+    public function seance()
     {
-        return $this->belongsTo(Spectacle::class);
+        return $this->belongsTo(Seance::class);
     }
-
-    public function hall()
-    {
-        return $this->belongsTo(Hall::class);
-    }
-
 }

@@ -28,13 +28,23 @@ class PaymentService
     {
         $amount = (int)($data['amount'] * 100); // Convert to cents
 
+        // Convert metadata values to strings (Stripe only accepts string values)
+        $metadata = [];
+        if (isset($data['metadata']) && is_array($data['metadata'])) {
+            foreach ($data['metadata'] as $key => $value) {
+                $metadata[$key] = is_array($value) || is_object($value)
+                    ? json_encode($value)
+                    : (string)$value;
+            }
+        }
+
         // Create payment intent with Stripe
         $paymentIntent = $this->stripe->paymentIntents->create([
             'amount' => $amount,
             'currency' => $data['currency'] ?? 'eur',
             'payment_method_types' => ['card'],
             'description' => $data['description'] ?? null,
-            'metadata' => $data['metadata'] ?? [],
+            'metadata' => $metadata,
         ]);
 
         // Store payment in database

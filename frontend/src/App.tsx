@@ -1,9 +1,9 @@
 // src/App.tsx
 import "./App.css";
-import { TicketLabel } from "./components/TicketLabel";
+import { LoginCard } from "./components/LoginCard";
 
 function App() {
-  return <TicketLabel text="bonjour" variant="yellow"/>;
+  return <LoginCard />;
 }
 
 export default App;

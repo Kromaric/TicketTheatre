@@ -1,0 +1,279 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Models\Reservation;
+use App\Models\Seance;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+
+class ReservationController extends Controller
+{
+    /**
+     * Display a listing of reservations.
+     */
+    public function index(Request $request)
+    {
+        $query = Reservation::with(['user', 'seance.spectacle', 'seance.hall']);
+
+        // Filtre par utilisateur
+        if ($request->filled('user_id')) {
+            $query->where('user_id', $request->user_id);
+        }
+
+        // Filtre par statut
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Filtre par statut de paiement
+        if ($request->filled('payment_status')) {
+            $query->where('payment_status', $request->payment_status);
+        }
+
+        // Filtre par référence
+        if ($request->filled('booking_reference')) {
+            $query->where('booking_reference', 'like', '%' . $request->booking_reference . '%');
+        }
+
+        $reservations = $query->orderBy('created_at', 'desc')
+            ->paginate($request->get('per_page', 15));
+
+        return response()->json([
+            'success' => true,
+            'data' => $reservations
+        ]);
+    }
+
+    /**
+     * Store a newly created reservation.
+     */
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'seance_id' => 'required|exists:seances,id',
+            'quantity' => 'required|integer|min:1|max:10',
+            'seats' => 'nullable|array',
+            'seats.*' => 'string|max:10',
+        ]);
+
+        $seance = Seance::findOrFail($validated['seance_id']);
+
+        // Vérifier que la séance est disponible
+        if ($seance->status !== 'scheduled') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cette séance n\'est pas disponible'
+            ], 422);
+        }
+
+        // Vérifier que la séance n'est pas passée
+        if ($seance->date_seance < now()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cette séance est déjà passée'
+            ], 422);
+        }
+
+        // Calculer les places disponibles
+        $bookedSeats = $seance->reservations()
+            ->whereIn('status', ['confirmed', 'pending'])
+            ->sum('quantity');
+
+        $remainingSeats = $seance->available_seats - $bookedSeats;
+
+        if ($validated['quantity'] > $remainingSeats) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pas assez de places disponibles. Places restantes : ' . $remainingSeats
+            ], 422);
+        }
+
+        // Calculer le prix total
+        $totalPrice = $seance->price * $validated['quantity'];
+
+        // Générer une référence unique
+        $bookingReference = 'TH-' . date('Y') . '-' . strtoupper(Str::random(6));
+
+        // Créer la réservation
+        $reservation = Reservation::create([
+            'user_id' => $validated['user_id'],
+            'seance_id' => $validated['seance_id'],
+            'booking_reference' => $bookingReference,
+            'seats' => $validated['seats'] ?? null,
+            'quantity' => $validated['quantity'],
+            'total_price' => $totalPrice,
+            'status' => 'pending',
+            'payment_status' => 'pending',
+            'expires_at' => now()->addMinutes(15), // 15 minutes pour payer
+        ]);
+
+        $reservation->load(['seance.spectacle', 'seance.hall', 'user']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Réservation créée avec succès',
+            'data' => $reservation
+        ], 201);
+    }
+
+    /**
+     * Display the specified reservation.
+     */
+    public function show(Reservation $reservation)
+    {
+        $reservation->load(['user', 'seance.spectacle.category', 'seance.hall']);
+
+        return response()->json([
+            'success' => true,
+            'data' => $reservation
+        ]);
+    }
+
+    /**
+     * Update the specified reservation.
+     */
+    public function update(Request $request, Reservation $reservation)
+    {
+        $validated = $request->validate([
+            'status' => 'sometimes|in:pending,confirmed,cancelled,expired',
+            'payment_status' => 'sometimes|in:pending,paid,refunded,failed',
+            'payment_id' => 'nullable|string|max:255',
+            'cancellation_reason' => 'nullable|string',
+        ]);
+
+        // Si confirmation
+        if (isset($validated['status']) && $validated['status'] === 'confirmed') {
+            $validated['confirmed_at'] = now();
+        }
+
+        // Si annulation
+        if (isset($validated['status']) && $validated['status'] === 'cancelled') {
+            $validated['cancelled_at'] = now();
+        }
+
+        $reservation->update($validated);
+        $reservation->load(['user', 'seance.spectacle', 'seance.hall']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Réservation mise à jour avec succès',
+            'data' => $reservation
+        ]);
+    }
+
+    /**
+     * Cancel a reservation.
+     */
+    public function cancel(Request $request, Reservation $reservation)
+    {
+        // Vérifier que la réservation peut être annulée
+        if ($reservation->status === 'cancelled') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cette réservation est déjà annulée'
+            ], 422);
+        }
+
+        $validated = $request->validate([
+            'cancellation_reason' => 'nullable|string|max:500',
+        ]);
+
+        $reservation->update([
+            'status' => 'cancelled',
+            'cancelled_at' => now(),
+            'cancellation_reason' => $validated['cancellation_reason'] ?? null,
+        ]);
+
+        $reservation->load(['user', 'seance.spectacle', 'seance.hall']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Réservation annulée avec succès',
+            'data' => $reservation
+        ]);
+    }
+
+    /**
+     * Confirm payment for a reservation.
+     */
+    public function confirmPayment(Request $request, Reservation $reservation)
+    {
+        $validated = $request->validate([
+            'payment_id' => 'required|string|max:255',
+        ]);
+
+        // Vérifier que la réservation est en attente
+        if ($reservation->payment_status !== 'pending') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cette réservation a déjà été traitée'
+            ], 422);
+        }
+
+        // Vérifier que la réservation n'a pas expiré
+        if ($reservation->expires_at && $reservation->expires_at < now()) {
+            $reservation->update(['status' => 'expired']);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Cette réservation a expiré'
+            ], 422);
+        }
+
+        $reservation->update([
+            'payment_status' => 'paid',
+            'payment_id' => $validated['payment_id'],
+            'status' => 'confirmed',
+            'confirmed_at' => now(),
+        ]);
+
+        $reservation->load(['user', 'seance.spectacle', 'seance.hall']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Paiement confirmé avec succès',
+            'data' => $reservation
+        ]);
+    }
+
+    /**
+     * Get user reservations.
+     */
+    public function userReservations($userId)
+    {
+        $reservations = Reservation::with(['seance.spectacle', 'seance.hall'])
+            ->where('user_id', $userId)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $reservations
+        ]);
+    }
+
+    /**
+     * Get reservation by booking reference.
+     */
+    public function getByReference($reference)
+    {
+        $reservation = Reservation::with(['user', 'seance.spectacle', 'seance.hall'])
+            ->where('booking_reference', $reference)
+            ->first();
+
+        if (!$reservation) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Réservation non trouvée'
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $reservation
+        ]);
+    }
+}

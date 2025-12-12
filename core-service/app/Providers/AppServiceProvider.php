@@ -19,6 +19,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Configuration pour API pure - pas besoin de configuration spéciale
     }
 }

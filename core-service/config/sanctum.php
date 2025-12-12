@@ -22,6 +22,11 @@ return [
         // Sanctum::currentRequestHost(),
     ))),
 
+    'database' => [
+        'connection' => 'auth_db', 
+        'table' => 'personal_access_tokens',
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Sanctum Guards

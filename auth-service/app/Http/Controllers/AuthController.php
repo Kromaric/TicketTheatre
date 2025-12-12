@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
@@ -17,42 +17,75 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
-        // 2. Appel du Core Service pour validation et récupération du profil (communication inter-services)
-        // Utilisation du nom du SERVICE COURT (plus fiable en interne)
-        $response = Http::post('http://core-service-app:80/api/validate-credentials', [
-            'email' => $request->email,
-            'password' => $request->password,
-        ]);
+        // 2. Récupérer l'utilisateur de la base partagée
+        $user = User::where('email', $request->email)->first();
 
-        // 3. Vérification de la réponse du Core Service
-        if ($response->failed() || $response->status() !== 200) {
-            // Log de l'erreur pour le débogage
-            // dd($response->body());
-
+        // 3. Vérifier les credentials
+        if (!$user || !Hash::check($request->password, $user->password)) {
             throw ValidationException::withMessages([
-                'email' => ['Les identifiants fournis ne correspondent pas à nos enregistrements, ou le service de vérification est indisponible.'],
+                'email' => ['Les identifiants fournis ne correspondent pas à nos enregistrements.'],
             ]);
         }
 
-        // ... (Le reste du code reste inchangé)
-        $userData = $response->json();
-
-        $user = User::where('id', $userData['id'])->first();
-
-        if (!$user) {
-             $user = User::create([
-                 'id' => $userData['id'],
-                 'email' => $userData['email'],
-                 'password' => 'NOPASS',
-             ]);
+        // 4. Vérifier que l'utilisateur est actif
+        if (!$user->is_active) {
+            throw ValidationException::withMessages([
+                'email' => ['Votre compte est désactivé.'],
+            ]);
         }
 
+        // 5. Supprimer les anciens tokens et en créer un nouveau
         $user->tokens()->delete();
         $token = $user->createToken('auth-token')->plainTextToken;
 
         return response()->json([
+            'success' => true,
             'token' => $token,
-            'user' => $userData,
+            'user' => [
+                'id' => $user->id,
+                'first_name' => $user->first_name,
+                'last_name' => $user->last_name,
+                'full_name' => $user->full_name,
+                'email' => $user->email,
+                'role' => $user->role,
+                'phone_number' => $user->phone_number,
+                'sex' => $user->sex,
+                'date_of_birth' => $user->date_of_birth,
+                'avatar' => $user->avatar,
+                'is_active' => $user->is_active,
+            ]
         ], 200);
+    }
+
+    public function logout(Request $request)
+    {
+        $request->user()->currentAccessToken()->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Déconnexion réussie'
+        ]);
+    }
+
+    public function me(Request $request)
+    {
+        $user = $request->user();
+        
+        return response()->json([
+            'success' => true,
+            'user' => [
+                'id' => $user->id,
+                'first_name' => $user->first_name,
+                'last_name' => $user->last_name,
+                'full_name' => $user->full_name,
+                'email' => $user->email,
+                'role' => $user->role,
+                'phone_number' => $user->phone_number,
+                'sex' => $user->sex,
+                'date_of_birth' => $user->date_of_birth,
+                'avatar' => $user->avatar,
+                'is_active' => $user->is_active,
+            ]
+        ]);
     }
 }

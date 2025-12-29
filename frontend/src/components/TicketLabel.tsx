@@ -35,6 +35,11 @@ export const TicketLabel = ({ text, variant = "red" }: TicketLabelProps) => {
       py="2"
       color={isYellow ? "black" : "white"}
       backgroundImage={backgroundImage}
+      cursor="pointer"
+      transition="transform 0.15s ease-out"
+      _hover={{
+        transform: "scale(1.05)",
+      }}
     >
       <Text fontWeight="bold" ml="2" fontSize="sm">
         {text}

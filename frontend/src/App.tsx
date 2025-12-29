@@ -1,9 +1,9 @@
 // src/App.tsx
 import "./App.css";
-import { LoginCard } from "./components/LoginCard";
+import { VelumCard  } from "./components/VelumCard";
 
 function App() {
-  return <LoginCard />;
+  return <VelumCard />;
 }
 
 export default App;

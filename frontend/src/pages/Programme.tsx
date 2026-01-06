@@ -15,7 +15,6 @@ type FilterValues = {
 };
 
 function formatShortDay(d: Date) {
-  // ex: "MER. 08"
   return d
     .toLocaleDateString("fr-FR", { weekday: "short", day: "2-digit" })
     .toUpperCase();
@@ -31,7 +30,6 @@ function dayLabelByIndex(d: Date, idx: number) {
 export default function Programme() {
   const [tab, setTab] = useState<SeancesTab>("affiche");
 
-  // Jours: aujourd’hui + 6
   const days = useMemo(() => {
     const base = new Date();
     base.setHours(0, 0, 0, 0);
@@ -44,7 +42,6 @@ export default function Programme() {
 
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
 
-  // Données statiques (tu remplaceras par le back plus tard)
   const afficheByDayCount = useMemo(() => {
     return [6, 3, 9, 6, 6, 12, 4];
   }, []);
@@ -59,20 +56,16 @@ export default function Programme() {
     date: "",
   });
 
-  // Popup filtre
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   return (
     <Box w="full" maxW="1200px" mx="auto" pt={4} pb={8}>
-      {/* Navigation tabs */}
       <Flex justify="center" mb={6}>
         <SeancesNav value={tab} onChange={setTab} />
       </Flex>
 
-      {/* Mode: A l'affiche */}
       {tab === "affiche" && (
         <>
-          {/* Ruban de jours */}
           <Flex
             gap={3}
             pb={2}
@@ -98,7 +91,6 @@ export default function Programme() {
             })}
           </Flex>
 
-          {/* Info jour */}
           <Text mb={4} fontWeight="semibold">
             Séances du{" "}
             {days[selectedDayIndex].toLocaleDateString("fr-FR", {
@@ -108,7 +100,6 @@ export default function Programme() {
             })}
           </Text>
 
-          {/* Grille tickets */}
           <Grid
             templateColumns={{ base: "1fr", md: "repeat(3, 1fr)" }}
             gap={6}
@@ -121,10 +112,8 @@ export default function Programme() {
         </>
       )}
 
-      {/* Mode: Toutes les séances */}
       {tab === "toutes" && (
         <>
-          {/* Bouton Filtrer (au lieu d'afficher Filter directement) */}
           <Flex justify="center" mb={6}>
             <Button
               bg="red.800"
@@ -138,7 +127,6 @@ export default function Programme() {
             </Button>
           </Flex>
 
-          {/* Petit état visible (optionnel) */}
           <Text mb={4} fontWeight="semibold">
             Toutes les séances
             {(filters.genre || filters.metteurEnScene || filters.date) && (

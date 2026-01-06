@@ -4,8 +4,8 @@ import { Link as RouterLink } from "react-router-dom";
 type TicketLabelProps = {
   text: string;
   variant?: "red" | "yellow";
-  to?: string;            // navigation
-  onClick?: () => void;   // action (optionnel)
+  to?: string;  
+  onClick?: () => void;  
 };
 
 export const TicketLabel = ({

@@ -8,7 +8,6 @@ export default function Base() {
     <Flex direction="column" minH="100vh" w="full" bg="gray.contrast">
       <Header />
 
-      {/* Zone centrale qui change selon la route */}
       <Box as="main" flex="1" w="full" p={4}>
         <Outlet />
       </Box>

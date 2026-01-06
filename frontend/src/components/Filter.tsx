@@ -29,7 +29,7 @@ export const Filter = ({
       p="3"
       pt="0.5"
     >
-      {/* + espace sous le titre */}
+
       <Card.Header pb="8">
         <Card.Title
           textAlign="center"
@@ -41,7 +41,6 @@ export const Filter = ({
         </Card.Title>
       </Card.Header>
 
-      {/* + espace au-dessus et en dessous des filtres */}
       <Card.Body pt="3" pb="4">
         <Stack gap="3" w="full">
           <NativeSelect.Root size="xs" variant="outline" w="full">
@@ -97,7 +96,6 @@ export const Filter = ({
         </Stack>
       </Card.Body>
 
-      {/* + espace au-dessus du bouton */}
       <Card.Footer justifyContent="center" pt="8" pb="2">
         <Button
           onClick={handleValidate}

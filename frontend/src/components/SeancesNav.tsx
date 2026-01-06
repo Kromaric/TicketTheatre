@@ -52,7 +52,7 @@ export const SeancesNav = ({
       align="center"
       gap="10px"
     >
-      {/* A L'AFFICHE (bordeaux) */}
+
       <Box
         {...baseBtn}
         role="tab"
@@ -65,7 +65,7 @@ export const SeancesNav = ({
         boxShadow={isAffiche ? "lg" : "none"}
         transform={
           isAffiche
-            ? "translateX(0) scale(1.08)"   // <-- grossissement augmenté
+            ? "translateX(0) scale(1.08)" 
             : "translateX(-8px) scale(0.93)"
         }
         opacity={isAffiche ? 1 : 0.82}
@@ -73,7 +73,6 @@ export const SeancesNav = ({
         A L’AFFICHE
       </Box>
 
-      {/* TOUTES LES SÉANCES (jaune) */}
       <Box
         {...baseBtn}
         role="tab"
@@ -86,7 +85,7 @@ export const SeancesNav = ({
         boxShadow={!isAffiche ? "lg" : "none"}
         transform={
           !isAffiche
-            ? "translateX(0) scale(1.08)"   // <-- grossissement augmenté
+            ? "translateX(0) scale(1.08)" 
             : "translateX(8px) scale(0.93)"
         }
         opacity={!isAffiche ? 1 : 0.82}

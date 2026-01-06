@@ -7,9 +7,9 @@ import { TicketPagination } from "../components/TicketPagination";
 export default function Home() {
   const [page, setPage] = useState(1);
 
-  // Données statiques pour l’instant
+  // Données statiques
   const totalTickets = 20;
-  const pageSize = 6; // 3 par ligne x 2 lignes
+  const pageSize = 6;
   const pageCount = Math.ceil(totalTickets / pageSize);
 
   const tickets = useMemo(

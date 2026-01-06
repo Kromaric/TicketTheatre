@@ -1,4 +1,4 @@
-import { Card, Text } from "@chakra-ui/react";
+import { Card, Center, Text } from "@chakra-ui/react";
 
 export const VelumCard = () => {
   return (
@@ -20,7 +20,7 @@ export const VelumCard = () => {
         </Card.Title>
       </Card.Header>
 
-      <Card.Body pt="1" pb="3">
+      <Card.Body pt="1" pb="5" textAlign="Center" fontWeight="medium">
         <Text fontSize="0.6rem">
           Sous son nom emprunté au grand voile des théâtres romains, Le Vélum
           est un lieu à taille humaine où la scène s’ouvre comme une agora

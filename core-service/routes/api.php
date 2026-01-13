@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\HallController;
+use App\Http\Controllers\Api\PaymentWebhookController;
 use App\Http\Controllers\Api\ReservationController;
 use App\Http\Controllers\Api\SeanceController;
 use App\Http\Controllers\Api\SpectacleController;
@@ -10,11 +11,18 @@ use App\Http\Controllers\Api\ValidationController;
 use App\Http\Controllers\Api\TestController;
 use Illuminate\Support\Facades\Route;
 
-// Route essentielle appelée par le Auth Service (DEPRECATED - plus nécessaire)
+// Route essentielle appelée par le Auth Service (DEPRECATED - plus nécessaire avec base partagée)
 Route::post('/validate-credentials', [ValidationController::class, 'validateCredentials']);
 
 // Route pour récupérer un utilisateur
 Route::get('/users/{id}', [UserController::class, 'show']);
+
+// Webhook du payment service (pas de CSRF)
+Route::post('/payment-webhook', [PaymentWebhookController::class, 'handlePaymentWebhook']);
+
+// Routes de test (à supprimer en production)
+Route::get('/test-auth-connection', [TestController::class, 'testAuthConnection']);
+Route::get('/debug-token/{token}', [TestController::class, 'debugToken']);
 
 // Routes publiques (sans authentification)
 Route::prefix('public')->group(function () {
@@ -58,6 +66,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Réservations
     Route::apiResource('reservations', ReservationController::class);
+    Route::post('reservations/{reservation}/initiate-payment', [ReservationController::class, 'initiatePayment']);
     Route::post('reservations/{reservation}/cancel', [ReservationController::class, 'cancel']);
     Route::post('reservations/{reservation}/confirm-payment', [ReservationController::class, 'confirmPayment']);
     Route::get('users/{userId}/reservations', [ReservationController::class, 'userReservations']);

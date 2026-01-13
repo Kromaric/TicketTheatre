@@ -19,6 +19,50 @@ class PaymentController extends Controller
     }
 
     /**
+     * List all payments.
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function index(Request $request): JsonResponse
+    {
+        try {
+            $query = \App\Models\Payment::query();
+
+            // Filtrer par statut si fourni
+            if ($request->has('status')) {
+                $query->where('status', $request->status);
+            }
+
+            // Filtrer par utilisateur si fourni
+            if ($request->has('user_id')) {
+                $query->where('user_id', $request->user_id);
+            }
+
+            // Pagination
+            $perPage = $request->get('per_page', 15);
+            $payments = $query->orderBy('created_at', 'desc')->paginate($perPage);
+
+            return response()->json([
+                'success' => true,
+                'data' => $payments->items(),
+                'meta' => [
+                    'current_page' => $payments->currentPage(),
+                    'last_page' => $payments->lastPage(),
+                    'per_page' => $payments->perPage(),
+                    'total' => $payments->total(),
+                ],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch payments',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Create a new payment intent.
      *
      * @param Request $request

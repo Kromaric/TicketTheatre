@@ -1,0 +1,485 @@
+###############################################################################
+# TicketTheatre - Fichier de Tests API Complet - VERSION CORRIGÉE
+# Version: 1.1.0
+# Date: 2026-01-11
+###############################################################################
+
+# VARIABLES
+@authBaseUrl = http://localhost:8081/api
+@coreBaseUrl = http://localhost:8082/api
+@paymentBaseUrl = http://localhost:8083/api
+@token = {{login.response.body.$.token}}
+@reservationId = {{createReservation.response.body.$.data.id}}
+@paymentId = {{initiatePayment.response.body.$.data.payment.id}}
+
+###############################################################################
+# HEALTH CHECKS - À EXÉCUTER EN PREMIER
+###############################################################################
+
+### Health Check Payment Service
+GET {{paymentBaseUrl}}/health
+
+### Health Check Core Service (catégories publiques)
+GET {{coreBaseUrl}}/public/categories
+
+###############################################################################
+# 1. AUTHENTIFICATION (Auth Service - Port 8081)
+###############################################################################
+
+### 1.1 Login Admin
+# @name login
+POST {{authBaseUrl}}/login
+Content-Type: application/json
+
+{
+  "email": "admin@tickettheatre.com",
+  "password": "password"
+}
+
+### 1.2 Login User Standard
+POST {{authBaseUrl}}/login
+Content-Type: application/json
+
+{
+  "email": "jean.dupont@example.com",
+  "password": "password"
+}
+
+### 1.3 Register
+POST {{authBaseUrl}}/register
+Content-Type: application/json
+
+{
+  "first_name": "Test",
+  "last_name": "User",
+  "email": "test.user@example.com",
+  "password": "password",
+  "password_confirmation": "password"
+}
+
+### 1.4 Logout
+POST {{authBaseUrl}}/logout
+Authorization: Bearer {{token}}
+
+### 1.5 Refresh Token
+POST {{authBaseUrl}}/refresh
+Authorization: Bearer {{token}}
+
+### 1.6 User Profile
+GET {{authBaseUrl}}/user
+Authorization: Bearer {{token}}
+
+###############################################################################
+# 2. CATÉGORIES (Core Service - Port 8082)
+###############################################################################
+
+### 2.1 Liste des catégories (Public)
+GET {{coreBaseUrl}}/public/categories
+
+### 2.2 Détails d'une catégorie (Public)
+GET {{coreBaseUrl}}/public/categories/1
+
+### 2.3 Créer une catégorie (Admin)
+POST {{coreBaseUrl}}/categories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Opéra",
+  "description": "Spectacles lyriques et opéras classiques et modernes",
+  "icon": "🎵",
+  "color": "#8B008B"
+}
+
+### 2.4 Modifier une catégorie (Admin)
+PUT {{coreBaseUrl}}/categories/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Comédie Musicale",
+  "description": "Spectacles musicaux avec humour et chansons"
+}
+
+### 2.5 Supprimer une catégorie (Admin)
+DELETE {{coreBaseUrl}}/categories/9
+Authorization: Bearer {{token}}
+
+###############################################################################
+# 3. SALLES (Core Service - Port 8082)
+###############################################################################
+
+### 3.1 Liste des salles (Public)
+GET {{coreBaseUrl}}/public/halls
+
+### 3.2 Filtrer salles actives par type (Public)
+GET {{coreBaseUrl}}/public/halls?is_active=true&type=Grande%20salle
+
+### 3.3 Détails d'une salle (Public)
+GET {{coreBaseUrl}}/public/halls/1
+
+### 3.4 Créer une salle (Admin)
+POST {{coreBaseUrl}}/halls
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Salle Mozart",
+  "location": "Niveau 2, Aile Est",
+  "capacity": 200,
+  "description": "Salle acoustique pour concerts de musique classique",
+  "type": "Salle de concert",
+  "is_active": true,
+  "image_url": "https://example.com/images/mozart-hall.jpg",
+  "amenities": ["Climatisation", "Bar", "Accès PMR", "Acoustique optimisée"]
+}
+
+### 3.5 Modifier une salle (Admin)
+PUT {{coreBaseUrl}}/halls/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "capacity": 550,
+  "description": "Grande salle rénovée avec équipement moderne"
+}
+
+### 3.6 Supprimer une salle (Admin)
+DELETE {{coreBaseUrl}}/halls/6
+Authorization: Bearer {{token}}
+
+### 3.7 Salles disponibles pour une période (Admin)
+GET {{coreBaseUrl}}/halls/available?date_start=2024-12-20T19:00:00&date_end=2024-12-20T22:00:00
+Authorization: Bearer {{token}}
+
+###############################################################################
+# 4. SPECTACLES (Core Service - Port 8082)
+###############################################################################
+
+### 4.1 Liste des spectacles (Public)
+GET {{coreBaseUrl}}/public/spectacles
+
+### 4.2 Filtrer spectacles par catégorie et statut (Public)
+GET {{coreBaseUrl}}/public/spectacles?category_id=1&status=ongoing&is_published=true
+
+### 4.3 Rechercher spectacles avec pagination (Public)
+GET {{coreBaseUrl}}/public/spectacles?search=moliere&sort_by=title&sort_order=asc&page=1&per_page=10
+
+### 4.4 Spectacles à venir (Public)
+GET {{coreBaseUrl}}/public/spectacles/upcoming
+
+### 4.5 Détails d'un spectacle (Public)
+GET {{coreBaseUrl}}/public/spectacles/1
+
+### 4.6 Créer un spectacle (Admin)
+POST {{coreBaseUrl}}/spectacles
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Cyrano de Bergerac",
+  "description": "Comédie héroïque en cinq actes et en vers d'Edmond Rostand",
+  "duration": 140,
+  "base_price": 42.00,
+  "image_url": "https://example.com/cyrano.jpg",
+  "poster_url": "https://example.com/cyrano-poster.jpg",
+  "trailer_url": "https://youtube.com/watch?v=xyz",
+  "language": "fr",
+  "age_restriction": 10,
+  "category_id": 5,
+  "director": "Denis Podalydès",
+  "actors": ["Denis Podalydès", "Florence Viala", "Laurent Stocker"],
+  "is_published": true,
+  "status": "upcoming"
+}
+
+### 4.7 Modifier un spectacle (Admin)
+PUT {{coreBaseUrl}}/spectacles/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "base_price": 48.00,
+  "is_published": true
+}
+
+### 4.8 Supprimer un spectacle (Admin)
+DELETE {{coreBaseUrl}}/spectacles/11
+Authorization: Bearer {{token}}
+
+###############################################################################
+# 5. SÉANCES (Core Service - Port 8082)
+###############################################################################
+
+### 5.1 Liste des séances (Public)
+GET {{coreBaseUrl}}/public/seances
+
+### 5.2 Filtrer séances par spectacle et période (Public)
+GET {{coreBaseUrl}}/public/seances?spectacle_id=1&date_from=2025-01-10&date_to=2025-01-31&upcoming_only=true
+
+### 5.3 Filtrer séances par salle et statut (Public)
+GET {{coreBaseUrl}}/public/seances?hall_id=1&status=scheduled&per_page=20
+
+### 5.4 Détails d'une séance (Public)
+GET {{coreBaseUrl}}/public/seances/1
+
+### 5.5 Places disponibles pour une séance (Public)
+GET {{coreBaseUrl}}/public/seances/1/available-seats
+
+### 5.6 Créer une séance (Admin)
+POST {{coreBaseUrl}}/seances
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "spectacle_id": 1,
+  "hall_id": 1,
+  "date_seance": "2025-02-15 20:00:00",
+  "available_seats": 500,
+  "price": 45.00,
+  "status": "scheduled"
+}
+
+### 5.7 Modifier une séance (Admin)
+PUT {{coreBaseUrl}}/seances/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "price": 50.00,
+  "status": "scheduled"
+}
+
+### 5.8 Supprimer une séance (Admin)
+DELETE {{coreBaseUrl}}/seances/101
+Authorization: Bearer {{token}}
+
+###############################################################################
+# 6. RÉSERVATIONS (Core Service - Port 8082)
+###############################################################################
+
+### 6.1 Liste des réservations (Auth Required)
+GET {{coreBaseUrl}}/reservations
+Authorization: Bearer {{token}}
+
+### 6.2 Filtrer réservations par statut (Auth Required)
+GET {{coreBaseUrl}}/reservations?status=confirmed&payment_status=paid&per_page=20
+Authorization: Bearer {{token}}
+
+### 6.3 Filtrer par référence de réservation (Auth Required)
+GET {{coreBaseUrl}}/reservations?booking_reference=TH-2025
+Authorization: Bearer {{token}}
+
+### 6.4 Créer une réservation (Auth Required)
+# @name createReservation
+POST {{coreBaseUrl}}/reservations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "user_id": 1,
+  "seance_id": 1,
+  "quantity": 2,
+  "seats": ["A12", "A13"]
+}
+
+### 6.5 Détails d'une réservation (Auth Required)
+GET {{coreBaseUrl}}/reservations/{{reservationId}}
+Authorization: Bearer {{token}}
+
+### 6.6 Réservation par référence (Public)
+GET {{coreBaseUrl}}/public/reservations/reference/TH-2025-ABC123
+
+### 6.7 Confirmer le paiement d'une réservation (Auth Required)
+POST {{coreBaseUrl}}/reservations/{{reservationId}}/confirm-payment
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "payment_id": "PAY-STRIPE-123456789"
+}
+
+### 6.8 Annuler une réservation (Auth Required)
+POST {{coreBaseUrl}}/reservations/{{reservationId}}/cancel
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "cancellation_reason": "Empêchement de dernière minute"
+}
+
+### 6.9 Modifier une réservation (Admin)
+PUT {{coreBaseUrl}}/reservations/{{reservationId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "confirmed",
+  "payment_status": "paid"
+}
+
+### 6.10 Réservations d'un utilisateur spécifique (Auth Required)
+GET {{coreBaseUrl}}/users/1/reservations
+Authorization: Bearer {{token}}
+
+###############################################################################
+# 7. FLUX DE PAIEMENT (Core Service → Payment Service)
+###############################################################################
+
+### 7.1 Initier un paiement pour une réservation
+# @name initiatePayment
+POST {{coreBaseUrl}}/reservations/{{reservationId}}/initiate-payment
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "customer_email": "client@example.com"
+}
+
+### 7.2 Simuler un webhook de succès de paiement
+POST {{coreBaseUrl}}/payment-webhook
+Content-Type: application/json
+
+{
+  "event": "payment.succeeded",
+  "payment": {
+    "id": 1,
+    "status": "succeeded",
+    "amount": 90.00,
+    "stripe_payment_intent_id": "pi_test_123456"
+  }
+}
+
+### 7.3 Simuler un webhook d'échec de paiement
+POST {{coreBaseUrl}}/payment-webhook
+Content-Type: application/json
+
+{
+  "event": "payment.failed",
+  "payment": {
+    "id": 1,
+    "status": "failed",
+    "amount": 90.00,
+    "stripe_payment_intent_id": "pi_test_123456"
+  }
+}
+
+### 7.4 Simuler un webhook de remboursement
+POST {{coreBaseUrl}}/payment-webhook
+Content-Type: application/json
+
+{
+  "event": "payment.refunded",
+  "payment": {
+    "id": 1,
+    "status": "refunded",
+    "amount": 90.00,
+    "stripe_payment_intent_id": "pi_test_123456"
+  }
+}
+
+###############################################################################
+# 8. PAYMENT SERVICE DIRECT (Port 8083) - ROUTES CORRIGÉES
+###############################################################################
+
+### 8.1 Lister tous les paiements (MAINTENANT DISPONIBLE)
+GET {{paymentBaseUrl}}/payments
+
+### 8.2 Filtrer paiements par statut
+GET {{paymentBaseUrl}}/payments?status=succeeded
+
+### 8.3 Filtrer paiements par utilisateur
+GET {{paymentBaseUrl}}/payments?user_id=1
+
+### 8.4 Créer un Payment Intent
+# @name createPayment
+POST {{paymentBaseUrl}}/payments
+Content-Type: application/json
+
+{
+  "amount": 100.00,
+  "currency": "eur",
+  "description": "Réservation TH-2025-ABC123",
+  "customer_email": "client@example.com",
+  "user_id": 1,
+  "order_id": 1,
+  "metadata": {
+    "reservation_id": "1",
+    "booking_reference": "TH-2025-ABC123"
+  }
+}
+
+### 8.5 Récupérer un paiement spécifique
+GET {{paymentBaseUrl}}/payments/1
+
+### 8.6 Récupérer les paiements d'un utilisateur
+GET {{paymentBaseUrl}}/payments/user/1
+
+### 8.7 Rembourser un paiement
+POST {{paymentBaseUrl}}/payments/{{paymentId}}/refund
+Content-Type: application/json
+
+{
+  "reason": "requested_by_customer"
+}
+
+###############################################################################
+# 9. SCÉNARIOS DE TEST COMPLETS
+###############################################################################
+
+### SCÉNARIO 1: Flux complet de réservation et paiement réussi
+# 1. Exécuter: Health Check Payment Service
+# 2. Exécuter: 1.1 Login Admin
+# 3. Exécuter: 6.4 Créer une réservation
+# 4. Exécuter: 7.1 Initier le paiement
+# 5. Exécuter: 7.2 Simuler webhook succès
+# 6. Exécuter: 6.5 Vérifier réservation confirmée
+
+### SCÉNARIO 2: Vérifier tous les services
+# 1. Health Check Payment Service
+# 2. Health Check Core Service
+# 3. Login
+# 4. Lister catégories
+# 5. Lister paiements
+
+###############################################################################
+# 10. TESTS D'ERREUR
+###############################################################################
+
+### 10.1 Réservation sans authentification (doit échouer 401)
+POST {{coreBaseUrl}}/reservations
+Content-Type: application/json
+
+{
+  "user_id": 1,
+  "seance_id": 1,
+  "quantity": 2
+}
+
+### 10.2 Réservation avec quantité excessive (doit échouer 422)
+POST {{coreBaseUrl}}/reservations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "user_id": 1,
+  "seance_id": 1,
+  "quantity": 15
+}
+
+### 10.3 Créer paiement sans montant (doit échouer 422)
+POST {{paymentBaseUrl}}/payments
+Content-Type: application/json
+
+{
+  "currency": "eur",
+  "user_id": 1
+}
+
+### 10.4 Supprimer catégorie avec spectacles associés (doit échouer)
+DELETE {{coreBaseUrl}}/categories/1
+Authorization: Bearer {{token}}
+
+###############################################################################
+# FIN DU FICHIER DE TESTS
+###############################################################################

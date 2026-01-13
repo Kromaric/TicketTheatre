@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Reservation;
 use App\Models\Seance;
+use App\Services\PaymentServiceClient;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -117,6 +118,77 @@ class ReservationController extends Controller
             'message' => 'Réservation créée avec succès',
             'data' => $reservation
         ], 201);
+    }
+
+    /**
+     * Initier le paiement pour une réservation
+     */
+    public function initiatePayment(Request $request, Reservation $reservation)
+    {
+        $validated = $request->validate([
+            'customer_email' => 'required|email',
+        ]);
+
+        // Vérifier que la réservation est en attente
+        if ($reservation->payment_status !== 'pending') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cette réservation a déjà été traitée'
+            ], 422);
+        }
+
+        // Vérifier que la réservation n'a pas expiré
+        if ($reservation->expires_at && $reservation->expires_at < now()) {
+            $reservation->update(['status' => 'expired']);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Cette réservation a expiré'
+            ], 422);
+        }
+
+        // Appeler le Payment Service
+        $paymentClient = new PaymentServiceClient();
+        $result = $paymentClient->createPaymentIntent([
+            'amount' => $reservation->total_price,
+            'currency' => 'eur',
+            'user_id' => $reservation->user_id,
+            'reservation_id' => $reservation->id,
+            'customer_email' => $validated['customer_email'],
+            'description' => "Réservation {$reservation->booking_reference}",
+            'metadata' => [
+                'reservation_id' => $reservation->id,
+                'booking_reference' => $reservation->booking_reference,
+                'seance_id' => $reservation->seance_id,
+                'quantity' => $reservation->quantity,
+            ],
+        ]);
+
+        if (!$result['success']) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la création du paiement',
+                'error' => $result['error']
+            ], 500);
+        }
+
+        // Mettre à jour la réservation avec l'ID du paiement
+        $paymentData = $result['data']['data'];
+        $reservation->update([
+            'payment_id' => $paymentData['id'], // ID dans payment-service
+        ]);
+
+        $reservation->load(['seance.spectacle', 'seance.hall', 'user']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Paiement initialisé avec succès',
+            'data' => [
+                'reservation' => $reservation,
+                'payment' => $paymentData,
+                'client_secret' => $result['data']['client_secret'],
+            ]
+        ]);
     }
 
     /**

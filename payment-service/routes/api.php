@@ -22,6 +22,9 @@ Route::get('/health', function () {
 
 // Payment routes
 Route::prefix('payments')->group(function () {
+    // List all payments (for testing/admin)
+    Route::get('/', [PaymentController::class, 'index']);
+    
     // Create payment intent
     Route::post('/', [PaymentController::class, 'createPaymentIntent']);
 

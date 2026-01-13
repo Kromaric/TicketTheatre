@@ -106,6 +106,9 @@ class WebhookController extends Controller
                 ->update(['status' => 'succeeded']);
 
             Log::info('Payment succeeded', ['payment_id' => $payment->id]);
+
+            // Notify Core Service
+            $this->notifyCoreService($payment, 'payment.succeeded');
         }
     }
 
@@ -132,6 +135,9 @@ class WebhookController extends Controller
                 'payment_id' => $payment->id,
                 'error' => $paymentIntent->last_payment_error ?? 'Unknown error',
             ]);
+
+            // Notify Core Service
+            $this->notifyCoreService($payment, 'payment.failed');
         }
     }
 
@@ -149,6 +155,9 @@ class WebhookController extends Controller
             $payment->update(['status' => 'canceled']);
 
             Log::info('Payment canceled', ['payment_id' => $payment->id]);
+
+            // Notify Core Service
+            $this->notifyCoreService($payment, 'payment.canceled');
         }
     }
 
@@ -169,6 +178,9 @@ class WebhookController extends Controller
                 'payment_id' => $payment->id,
                 'refund_amount' => $charge->amount_refunded / 100,
             ]);
+
+            // Notify Core Service
+            $this->notifyCoreService($payment, 'payment.refunded');
         }
     }
 
@@ -200,6 +212,50 @@ class WebhookController extends Controller
                 'payment_id' => $payment->id,
                 'dispute_id' => $dispute->id,
                 'reason' => $dispute->reason,
+            ]);
+        }
+    }
+
+    /**
+     * Notify Core Service about payment events
+     *
+     * @param Payment $payment
+     * @param string $event
+     * @return void
+     */
+    protected function notifyCoreService(Payment $payment, string $event): void
+    {
+        try {
+            $coreWebhookUrl = env('CORE_SERVICE_WEBHOOK_URL');
+            
+            if (!$coreWebhookUrl) {
+                Log::warning('Core webhook URL not configured');
+                return;
+            }
+
+            \Illuminate\Support\Facades\Http::timeout(10)->post($coreWebhookUrl, [
+                'event' => $event,
+                'payment' => [
+                    'id' => $payment->id,
+                    'stripe_payment_intent_id' => $payment->stripe_payment_intent_id,
+                    'amount' => $payment->amount,
+                    'currency' => $payment->currency,
+                    'status' => $payment->status,
+                    'user_id' => $payment->user_id,
+                    'order_id' => $payment->order_id,
+                    'customer_email' => $payment->customer_email,
+                    'metadata' => $payment->metadata,
+                ],
+            ]);
+
+            Log::info('Core service notified', [
+                'event' => $event,
+                'payment_id' => $payment->id
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to notify core service: ' . $e->getMessage(), [
+                'event' => $event,
+                'payment_id' => $payment->id
             ]);
         }
     }

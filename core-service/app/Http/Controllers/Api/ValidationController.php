@@ -29,7 +29,7 @@ class ValidationController extends Controller
             'id' => $user->id,
             'first_name' => $user->first_name,
             'last_name' => $user->last_name,
-            'full_name' => $user->full_name, 
+            'full_name' => $user->full_name,
             'email' => $user->email,
             'role' => $user->role,
             'phone_number' => $user->phone_number,
@@ -38,5 +38,30 @@ class ValidationController extends Controller
             'avatar' => $user->avatar,
             'is_active' => $user->is_active,
         ], 200);
+    }
+
+    public function register(Request $request)
+    {
+        $request->validate([
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:8|confirmed',
+            'phone_number' => 'nullable|string',
+        ]);
+
+        $user = User::create([
+            'first_name' => $request->first_name,
+            'last_name' => $request->last_name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'role' => 'user',
+            'phone_number' => $request->phone_number,
+        ]);
+
+        return response()->json([
+            'message' => 'Utilisateur créé avec succès',
+            'user' => $user
+        ], 201);
     }
 }

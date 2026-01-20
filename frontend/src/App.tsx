@@ -14,8 +14,8 @@ export default function App() {
       <Routes>
         <Route element={<Base />}>
           <Route path="/" element={<Home />} />
-          <Route path="/connexion" element={<Connexion />} />
-          <Route path="/inscription" element={<Inscription />} />
+          <Route path="/login" element={<Connexion />} />
+          <Route path="/register" element={<Inscription />} />
           <Route path="/theatre" element={<Theatre />} />
           <Route path="/programme" element={<Programme />} />
           <Route path="/reservation" element={<Reservation />} />

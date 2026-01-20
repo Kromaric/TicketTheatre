@@ -93,7 +93,7 @@ export const LoginCard = () => {
 
       <Card.Footer justifyContent="center">
         <Flex gap="4">
-          <TicketLabel text="Créer son compte" to="/inscription" />
+          <TicketLabel text="Créer son compte" to="/register" />
           <TicketLabel
             text={isLoading ? "Connexion..." : "Se connecter"}
             onClick={handleSubmit}

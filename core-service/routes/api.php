@@ -11,18 +11,13 @@ use App\Http\Controllers\Api\ValidationController;
 use App\Http\Controllers\Api\TestController;
 use Illuminate\Support\Facades\Route;
 
-// Route essentielle appelée par le Auth Service (DEPRECATED - plus nécessaire avec base partagée)
 Route::post('/validate-credentials', [ValidationController::class, 'validateCredentials']);
-
+Route::post('/register', [ValidationController::class, 'register']);
 // Route pour récupérer un utilisateur
 Route::get('/users/{id}', [UserController::class, 'show']);
 
 // Webhook du payment service (pas de CSRF)
 Route::post('/payment-webhook', [PaymentWebhookController::class, 'handlePaymentWebhook']);
-
-// Routes de test (à supprimer en production)
-Route::get('/test-auth-connection', [TestController::class, 'testAuthConnection']);
-Route::get('/debug-token/{token}', [TestController::class, 'debugToken']);
 
 // Routes publiques (sans authentification)
 Route::prefix('public')->group(function () {
@@ -50,7 +45,7 @@ Route::prefix('public')->group(function () {
 
 // Routes protégées (nécessitent authentification Sanctum)
 Route::middleware('auth:sanctum')->group(function () {
-    
+
     // Catégories (Admin seulement)
     Route::apiResource('categories', CategoryController::class)->except(['index', 'show']);
 

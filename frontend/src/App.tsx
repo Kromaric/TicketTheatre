@@ -5,6 +5,7 @@ import Connexion from "./pages/Connexion";
 import Inscription from "./pages/Inscription";
 import Theatre from "./pages/Theatre";
 import Programme from "./pages/Programme";
+import Reservation from "./pages/Reservation";
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
           <Route path="/inscription" element={<Inscription />} />
           <Route path="/theatre" element={<Theatre />} />
           <Route path="/programme" element={<Programme />} />
+          <Route path="/reservation" element={<Reservation />} />
         </Route>
       </Routes>
     </BrowserRouter>

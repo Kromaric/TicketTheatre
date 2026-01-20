@@ -5,6 +5,9 @@ import { TicketLabel } from "./TicketLabel";
 import { useAuth } from "../contexts/AuthContext";
 import { toaster } from "./ui/toaster";
 
+const isValidEmail = (email: string) =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(email.trim());
+
 export const SignupCard = () => {
   const [formData, setFormData] = useState({
     first_name: "",
@@ -27,6 +30,14 @@ export const SignupCard = () => {
       toaster.error({
         title: "Erreur",
         description: "Veuillez remplir tous les champs obligatoires",
+      });
+      return;
+    }
+
+    if (!isValidEmail(formData.email)) {
+      toaster.error({
+        title: "Erreur",
+        description: "Veuillez saisir une adresse email valide",
       });
       return;
     }

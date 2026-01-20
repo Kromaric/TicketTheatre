@@ -46,7 +46,7 @@ const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
     // Token invalide ou expiré
     localStorage.removeItem('auth_token');
     localStorage.removeItem('user');
-    window.location.href = '/login';
+    window.location.href = '/connexion';
     throw new Error('Session expirée');
   }
 

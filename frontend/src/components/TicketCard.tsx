@@ -26,7 +26,7 @@ export const TicketCard = () => {
           pt="4"
           pb="2"
         >
-          Titre piece
+          {title}
         </Card.Title>
 
         <Image
@@ -56,7 +56,7 @@ export const TicketCard = () => {
           px="4"
           pb="4"
         >
-          15 €
+          {price} €
         </Text>
       </Card.Body>
 
@@ -66,6 +66,11 @@ export const TicketCard = () => {
           bg="red.800"
           color="white"
           _hover={{ bg: "red.700" }}
+          onClick={() =>
+            navigate("/reservation", {
+              state: { title, price, showId: "demo-1" },
+            })
+          }
         >
           Réserver
         </Button>

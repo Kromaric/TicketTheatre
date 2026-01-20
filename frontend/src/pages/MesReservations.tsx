@@ -62,7 +62,7 @@ export default function MesReservations() {
           </Card.Body>
 
           <Card.Footer justifyContent="center" pt="4">
-            <TicketLabel text="Se connecter" to="/connexion" />
+            <TicketLabel text="Se connecter" to="/login" />
           </Card.Footer>
         </Card.Root>
       </Flex>

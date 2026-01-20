@@ -59,7 +59,7 @@ export default function Reservation() {
           <Card.Footer justifyContent="center" pt="4">
             <TicketLabel
               text="Se connecter"
-              to="/connexion"
+              to="/login"
             />
           </Card.Footer>
         </Card.Root>

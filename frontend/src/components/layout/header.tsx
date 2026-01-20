@@ -132,7 +132,7 @@ export default function Header() {
                     borderRadius: "full",
                   }}
                 >
-                  <RouterLink to="/connexion">Connexion</RouterLink>
+                  <RouterLink to="/login">Connexion</RouterLink>
                 </Link>
 
                 <Link

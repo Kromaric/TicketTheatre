@@ -5,11 +5,9 @@ import { TicketLabel } from "./TicketLabel";
 import { useAuth } from "../contexts/AuthContext";
 import { toaster } from "./ui/toaster";
 
-/**
- * Composant de carte d'inscription pour l'application TicketTheatre.
- * Ce composant gère l'état du formulaire et communique avec le AuthContext
- * pour envoyer les données séparées (nom et prénom) au Core Service.
- */
+const isValidEmail = (email: string) =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(email.trim());
+
 export const SignupCard = () => {
   const [formData, setFormData] = useState({
     first_name: "",
@@ -42,7 +40,14 @@ export const SignupCard = () => {
       return;
     }
 
-    // Validation de la confirmation du mot de passe
+    if (!isValidEmail(formData.email)) {
+      toaster.error({
+        title: "Erreur",
+        description: "Veuillez saisir une adresse email valide",
+      });
+      return;
+    }
+
     if (formData.password !== formData.password_confirmation) {
       toaster.error({
         title: "Erreur",

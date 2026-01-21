@@ -7,6 +7,7 @@ import Theatre from "./pages/Theatre";
 import Programme from "./pages/Programme";
 import SpectacleDetails from "./pages/SpectacleDetails";
 import MesReservations from "./pages/MesReservations.tsx";
+import Reservation from "./pages/Reservation.tsx";
 
 export default function App() {
   return (
@@ -20,6 +21,7 @@ export default function App() {
           <Route path="/programme" element={<Programme />} />
           <Route path="/spectacle/:id" element={<SpectacleDetails />} />
           <Route path="/mes-reservations" element={<MesReservations/>} />
+          <Route path="/reserver/:id" element={<Reservation/>}/>
         </Route>
       </Routes>
     </BrowserRouter>

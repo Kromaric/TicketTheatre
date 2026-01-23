@@ -14,24 +14,16 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Configurer Sanctum pour les requêtes API stateless
         $middleware->statefulApi();
+        $middleware->alias([
+            'auth' => \App\Http\Middleware\Authenticate::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        // Gérer les exceptions d'authentification
         $exceptions->render(function (AuthenticationException $e, Request $request) {
-            // Pour toutes les requêtes API, retourner du JSON
-            if ($request->is('api/*') || $request->expectsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Non authentifié. Token manquant ou invalide.'
-                ], 401);
-            }
-            
-            // Fallback (ne devrait pas arriver)
             return response()->json([
                 'success' => false,
-                'message' => 'Unauthenticated.'
+                'message' => 'Non authentifié. Token manquant ou invalide.'
             ], 401);
         });
     })

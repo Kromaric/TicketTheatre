@@ -1,5 +1,4 @@
-import { API_CONFIG, type PaginatedResponse, type ApiResponse } from './api';
-import fetchWithAuth from './api.ts'
+import { API_CONFIG, fetchWithAuth, type PaginatedResponse, type ApiResponse } from './api';
 
 export interface Category {
   id: number;
@@ -77,8 +76,25 @@ export interface Reservation {
   created_at: string;
 }
 
+// Helper pour parser les réponses JSON en gérant les erreurs HTML
+async function parseResponse<T>(response: Response): Promise<T> {
+  const text = await response.text();
+  
+  // Vérifier si c'est du HTML (erreur Laravel)
+  if (text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) {
+    console.error('Réponse HTML reçue au lieu de JSON:', text.substring(0, 200));
+    throw new Error(`Erreur serveur (${response.status}): Réponse HTML au lieu de JSON`);
+  }
+  
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    console.error('Erreur parsing JSON:', text.substring(0, 200));
+    throw new Error('Réponse invalide du serveur');
+  }
+}
+
 class CoreService {
-  // Catégories
   async getCategories(): Promise<Category[]> {
     try {
       const response = await fetch(`${API_CONFIG.CORE_URL}/public/categories`);
@@ -86,7 +102,7 @@ class CoreService {
         console.error('Erreur API categories:', response.status);
         return [];
       }
-      const data: ApiResponse<Category[]> = await response.json();
+      const data: ApiResponse<Category[]> = await parseResponse(response);
       return Array.isArray(data.data) ? data.data : [];
     } catch (error) {
       console.error('Erreur getCategories:', error);
@@ -98,7 +114,7 @@ class CoreService {
     try {
       const response = await fetch(`${API_CONFIG.CORE_URL}/public/categories/${id}`);
       if (!response.ok) return null;
-      const data: ApiResponse<Category> = await response.json();
+      const data: ApiResponse<Category> = await parseResponse(response);
       return data.data || null;
     } catch (error) {
       console.error('Erreur getCategory:', error);
@@ -106,7 +122,6 @@ class CoreService {
     }
   }
 
-  // Spectacles
   async getSpectacles(params?: {
     category_id?: number;
     status?: string;
@@ -134,24 +149,23 @@ class CoreService {
         return { success: false, data: [] };
       }
       
-      const result = await response.json();
-      //console.log('Spectacles data RAW:', result);
+      const result = await parseResponse<any>(response);
+      console.log('Spectacles data RAW:', result);
       
-      // Le backend peut retourner soit un tableau direct, soit un objet paginé
       let spectaclesList: Spectacle[] = [];
       
       if (Array.isArray(result.data)) {
-        // Cas 1: data est directement un tableau
         spectaclesList = result.data;
       } else if (result.data && typeof result.data === 'object') {
-        // Cas 2: data est un objet de pagination avec data/items à l'intérieur
         if (Array.isArray(result.data.data)) {
           spectaclesList = result.data.data;
         } else if (Array.isArray(result.data.items)) {
           spectaclesList = result.data.items;
         }
       }
-
+      
+      console.log('Spectacles extraits:', spectaclesList);
+      
       return {
         success: result.success || true,
         data: spectaclesList,
@@ -167,7 +181,7 @@ class CoreService {
     try {
       const response = await fetch(`${API_CONFIG.CORE_URL}/public/spectacles/upcoming`);
       if (!response.ok) return [];
-      const data: ApiResponse<Spectacle[]> = await response.json();
+      const data: ApiResponse<Spectacle[]> = await parseResponse(response);
       return Array.isArray(data.data) ? data.data : [];
     } catch (error) {
       console.error('Erreur getUpcomingSpectacles:', error);
@@ -179,7 +193,7 @@ class CoreService {
     try {
       const response = await fetch(`${API_CONFIG.CORE_URL}/public/spectacles/${id}`);
       if (!response.ok) return null;
-      const data: ApiResponse<Spectacle> = await response.json();
+      const data: ApiResponse<Spectacle> = await parseResponse(response);
       return data.data || null;
     } catch (error) {
       console.error('Erreur getSpectacle:', error);
@@ -187,7 +201,6 @@ class CoreService {
     }
   }
 
-  // Séances
   async getSeances(params?: {
     spectacle_id?: number;
     hall_id?: number;
@@ -212,9 +225,8 @@ class CoreService {
       const response = await fetch(`${API_CONFIG.CORE_URL}/public/seances?${queryParams}`);
       if (!response.ok) return { success: false, data: [] };
       
-      const result = await response.json();
+      const result = await parseResponse<any>(response);
       
-      // Même logique pour les séances
       let seancesList: Seance[] = [];
       if (Array.isArray(result.data)) {
         seancesList = result.data;
@@ -240,8 +252,11 @@ class CoreService {
   async getSeance(id: number): Promise<Seance | null> {
     try {
       const response = await fetch(`${API_CONFIG.CORE_URL}/public/seances/${id}`);
-      if (!response.ok) return null;
-      const data: ApiResponse<Seance> = await response.json();
+      if (!response.ok) {
+        console.error('Erreur getSeance, status:', response.status);
+        return null;
+      }
+      const data: ApiResponse<Seance> = await parseResponse(response);
       return data.data || null;
     } catch (error) {
       console.error('Erreur getSeance:', error);
@@ -258,7 +273,7 @@ class CoreService {
     try {
       const response = await fetch(`${API_CONFIG.CORE_URL}/public/seances/${seanceId}/available-seats`);
       if (!response.ok) return null;
-      const data = await response.json();
+      const data = await parseResponse<any>(response);
       return data.data || null;
     } catch (error) {
       console.error('Erreur getAvailableSeats:', error);
@@ -266,24 +281,32 @@ class CoreService {
     }
   }
 
-  // Réservations (authentification requise)
   async createReservation(data: {
     user_id: number;
     seance_id: number;
     quantity: number;
     seats?: string[];
   }): Promise<Reservation> {
+    console.log('createReservation - URL:', `${API_CONFIG.CORE_URL}/reservations`);
+    console.log('createReservation - Data:', data);
+    
     const response = await fetchWithAuth(`${API_CONFIG.CORE_URL}/reservations`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
 
+    console.log('createReservation - Response status:', response.status);
+    console.log('createReservation - Response headers:', response.headers);
+
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Erreur lors de la réservation');
+      const errorData = await parseResponse<any>(response);
+      console.error('createReservation - Error:', errorData);
+      throw new Error(errorData.message || 'Erreur lors de la réservation');
     }
 
-    const result: ApiResponse<Reservation> = await response.json();
+    const result: ApiResponse<Reservation> = await parseResponse(response);
+    console.log('createReservation - Result:', result);
+    
     if (!result.data) throw new Error('Erreur lors de la réservation');
     return result.data;
   }
@@ -292,7 +315,7 @@ class CoreService {
     try {
       const response = await fetchWithAuth(`${API_CONFIG.CORE_URL}/users/${userId}/reservations`);
       if (!response.ok) return [];
-      const data: ApiResponse<Reservation[]> = await response.json();
+      const data: ApiResponse<Reservation[]> = await parseResponse(response);
       return Array.isArray(data.data) ? data.data : [];
     } catch (error) {
       console.error('Erreur getUserReservations:', error);
@@ -304,7 +327,7 @@ class CoreService {
     try {
       const response = await fetchWithAuth(`${API_CONFIG.CORE_URL}/reservations/${id}`);
       if (!response.ok) return null;
-      const data: ApiResponse<Reservation> = await response.json();
+      const data: ApiResponse<Reservation> = await parseResponse(response);
       return data.data || null;
     } catch (error) {
       console.error('Erreur getReservation:', error);
@@ -316,7 +339,7 @@ class CoreService {
     try {
       const response = await fetch(`${API_CONFIG.CORE_URL}/public/reservations/reference/${reference}`);
       if (!response.ok) return null;
-      const data: ApiResponse<Reservation> = await response.json();
+      const data: ApiResponse<Reservation> = await parseResponse(response);
       return data.data || null;
     } catch (error) {
       console.error('Erreur getReservationByReference:', error);
@@ -331,7 +354,7 @@ class CoreService {
     });
 
     if (!response.ok) {
-      const error = await response.json();
+      const error = await parseResponse<any>(response);
       throw new Error(error.message || 'Erreur lors de l\'annulation');
     }
   }
@@ -350,11 +373,11 @@ class CoreService {
     );
 
     if (!response.ok) {
-      const error = await response.json();
+      const error = await parseResponse<any>(response);
       throw new Error(error.message || 'Erreur lors de l\'initialisation du paiement');
     }
 
-    const result: ApiResponse<any> = await response.json();
+    const result: ApiResponse<any> = await parseResponse(response);
     if (!result.data) throw new Error('Erreur lors de l\'initialisation du paiement');
     return result.data;
   }

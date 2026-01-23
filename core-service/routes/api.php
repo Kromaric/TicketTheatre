@@ -43,6 +43,10 @@ Route::prefix('public')->group(function () {
     Route::get('/reservations/reference/{reference}', [ReservationController::class, 'getByReference']);
 });
 
+// Routes publiques de réservation (sans auth)
+Route::post('/reservations', [ReservationController::class, 'store']);
+Route::post('/reservations/{reservation}/initiate-payment', [ReservationController::class, 'initiatePayment']);
+
 // Routes protégées (nécessitent authentification Sanctum)
 Route::middleware('auth:sanctum')->group(function () {
 
@@ -59,9 +63,11 @@ Route::middleware('auth:sanctum')->group(function () {
     // Séances (Admin seulement)
     Route::apiResource('seances', SeanceController::class)->except(['index', 'show']);
 
-    // Réservations
-    Route::apiResource('reservations', ReservationController::class);
-    Route::post('reservations/{reservation}/initiate-payment', [ReservationController::class, 'initiatePayment']);
+    // Réservations protégées
+    Route::get('reservations', [ReservationController::class, 'index']);
+    Route::get('reservations/{reservation}', [ReservationController::class, 'show']);
+    Route::put('reservations/{reservation}', [ReservationController::class, 'update']);
+    Route::delete('reservations/{reservation}', [ReservationController::class, 'destroy']);
     Route::post('reservations/{reservation}/cancel', [ReservationController::class, 'cancel']);
     Route::post('reservations/{reservation}/confirm-payment', [ReservationController::class, 'confirmPayment']);
     Route::get('users/{userId}/reservations', [ReservationController::class, 'userReservations']);

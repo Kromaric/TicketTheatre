@@ -6,8 +6,10 @@ import Inscription from "./pages/Inscription";
 import Theatre from "./pages/Theatre";
 import Programme from "./pages/Programme";
 import SpectacleDetails from "./pages/SpectacleDetails";
-import MesReservations from "./pages/MesReservations.tsx";
-import Reservation from "./pages/Reservation.tsx";
+import Reservation from "./pages/Reservation";
+import PaiementPage from "./pages/PaiementPage";
+import ConfirmationPaiement from "./pages/ConfirmationPaiement";
+import MesReservations from "./pages/MesReservations";
 
 export default function App() {
   return (
@@ -20,8 +22,10 @@ export default function App() {
           <Route path="/theatre" element={<Theatre />} />
           <Route path="/programme" element={<Programme />} />
           <Route path="/spectacle/:id" element={<SpectacleDetails />} />
-          <Route path="/mes-reservations" element={<MesReservations/>} />
-          <Route path="/reserver/:id" element={<Reservation/>}/>
+          <Route path="/reservation/:seanceId" element={<Reservation />} />
+          <Route path="/paiement/:reservationId" element={<PaiementPage />} />
+          <Route path="/confirmation-paiement/:reservationId" element={<ConfirmationPaiement />} />
+          <Route path="/mes-reservations" element={<MesReservations />} />
         </Route>
       </Routes>
     </BrowserRouter>

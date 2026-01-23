@@ -25,8 +25,11 @@ export interface PaginatedResponse<T> {
 }
 
 // Configuration par défaut pour fetch
-const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
+export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
   const token = localStorage.getItem('auth_token');
+  
+  console.log('fetchWithAuth - URL:', url);
+  console.log('fetchWithAuth - Token:', token ? 'Présent' : 'Absent');
   
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
@@ -34,15 +37,23 @@ const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
   };
 
   if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+    headers["Authorization"] = `Bearer ${token}`;
+    console.log('fetchWithAuth - Authorization header ajouté');
+  } else {
+    console.warn('fetchWithAuth - Aucun token trouvé dans localStorage');
   }
+
+  console.log('fetchWithAuth - Headers:', headers);
 
   const response = await fetch(url, {
     ...options,
     headers,
   });
 
+  console.log('fetchWithAuth - Response status:', response.status);
+
   if (response.status === 401) {
+    console.error('fetchWithAuth - 401 Non autorisé, nettoyage du token');
     // Token invalide ou expiré
     localStorage.removeItem('auth_token');
     localStorage.removeItem('user');
@@ -52,4 +63,3 @@ const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
 
   return response;
 };
-export default fetchWithAuth

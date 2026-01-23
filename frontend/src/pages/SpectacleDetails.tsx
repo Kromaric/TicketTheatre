@@ -67,7 +67,7 @@ export default function SpectacleDetails() {
       navigate("/login");
       return;
     }
-    navigate(`/reserver/${seanceId}`);
+    navigate(`/reservation/${seanceId}`);
   };
 
   if (loading) {
@@ -89,7 +89,6 @@ export default function SpectacleDetails() {
   return (
     <Box w="full" maxW="1200px" mx="auto" py={8} px={4}>
       <Grid templateColumns={{ base: "1fr", md: "1fr 2fr" }} gap={8}>
-        {/* Image */}
         <Box>
           <Image
             src={spectacle.poster_url || spectacle.image_url || theatreImg}
@@ -100,7 +99,6 @@ export default function SpectacleDetails() {
           />
         </Box>
 
-        {/* Détails */}
         <Stack gap={4}>
           <Flex align="center" gap={4}>
             <Heading size="2xl">{spectacle.title}</Heading>
@@ -162,7 +160,6 @@ export default function SpectacleDetails() {
         </Stack>
       </Grid>
 
-      {/* Séances disponibles */}
       <Box mt={12}>
         <Heading size="lg" mb={6}>
           Séances disponibles ({seances.length})

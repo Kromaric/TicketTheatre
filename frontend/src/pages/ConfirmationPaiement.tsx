@@ -10,6 +10,7 @@ import {
   Center,
   Stack,
 } from "@chakra-ui/react";
+import { coreService } from "../services/core.service";
 import { toaster } from "../components/ui/toaster";
 
 export default function ConfirmationPaiement() {
@@ -20,30 +21,46 @@ export default function ConfirmationPaiement() {
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    const status = searchParams.get("redirect_status");
+    const sessionId = searchParams.get("session_id");
 
-    if (status === "succeeded") {
+    if (sessionId && reservationId) {
+      // Le paiement Stripe est validé, confirmer la réservation
+      confirmPayment(parseInt(reservationId), sessionId);
+    } else {
+      setLoading(false);
+      toaster.error({
+        title: "Erreur",
+        description: "Informations de paiement manquantes",
+      });
+    }
+  }, [reservationId, searchParams]);
+
+  const confirmPayment = async (resId: number, sessionId: string) => {
+    try {
+      // Confirmer le paiement avec la session Stripe
+      await coreService.confirmPaymentManual(resId, sessionId);
       setSuccess(true);
       toaster.success({
         title: "Paiement confirmé !",
-        description: "Votre réservation est confirmée. Le webhook mettra à jour le statut.",
+        description: "Votre réservation est confirmée",
       });
-    } else {
+    } catch (error) {
+      console.error('Erreur confirmation:', error);
       toaster.error({
         title: "Erreur",
-        description: "Le paiement n'a pas abouti",
+        description: error instanceof Error ? error.message : "Erreur lors de la confirmation",
       });
+    } finally {
+      setLoading(false);
     }
-    
-    setLoading(false);
-  }, [reservationId, searchParams]);
+  };
 
   if (loading) {
     return (
       <Center minH="70vh">
         <Stack gap={4} textAlign="center">
           <Spinner size="xl" color="red.500" />
-          <Text>Vérification du paiement...</Text>
+          <Text>Confirmation du paiement en cours...</Text>
         </Stack>
       </Center>
     );
@@ -60,7 +77,7 @@ export default function ConfirmationPaiement() {
               </Heading>
               <Text>
                 {success
-                  ? "Votre réservation a été confirmée avec succès. Vous pouvez consulter vos réservations."
+                  ? "Votre réservation a été confirmée avec succès. Vous allez recevoir un email de confirmation."
                   : "Une erreur est survenue lors du traitement de votre paiement"}
               </Text>
               <Button onClick={() => navigate("/mes-reservations")}>

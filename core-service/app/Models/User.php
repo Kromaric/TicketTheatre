@@ -43,13 +43,11 @@ class User extends Authenticatable
         ];
     }
 
-    // Accessor pour le nom complet
     public function getFullNameAttribute(): string
     {
         return "{$this->first_name} {$this->last_name}";
     }
 
-    // Relations
     public function reservations()
     {
         return $this->hasMany(Reservation::class);

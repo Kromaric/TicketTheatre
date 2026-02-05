@@ -191,38 +191,14 @@ class CoreService {
 
   async getUpcomingSpectacles(): Promise<Spectacle[]> {
     try {
-      const response = await fetch(`${API_CONFIG.CORE_URL}/public/spectacles/upcoming`);
+      const response = await fetch(`${API_CONFIG.CORE_URL}/public/spectacles`);
       if (!response.ok) return [];
       const data: ApiResponse<Spectacle[]> = await parseResponse(response);
       return Array.isArray(data.data) ? data.data : [];
     } catch (error) {
-      console.error('Erreur getUpcomingSpectacles:', error);
+      console.error('Erreur getSpectacles:', error);
       return [];
     }
-  }
-
-  async createSpectacle(data: {
-    title: string;
-    description?: string
-    duration?: number;
-    base_price: number;
-    image_url?: string;
-    poster_url?: string;
-    trailer_url?: string;
-    language?: string;
-    age_restriction?: number;
-    category_id?: number;
-    category?: Category;
-    director?: string;
-    actors?: string[]; }): Promise<Spectacle> {
-    const response = await fetchWithAuth(`${API_CONFIG.CORE_URL}/spectacles`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-    if (!response.ok) throw new Error('Impossible de créer');
-    const result: ApiResponse<Spectacle> = await parseResponse(response);
-    if (!result.data) throw new Error('Erreur');
-    return result.data;
   }
 
   async getSpectacle(id: number): Promise<Spectacle | null> {
@@ -366,6 +342,21 @@ class CoreService {
     const result: ApiResponse<any> = await parseResponse(response);
     if (!result.data) throw new Error('Erreur lors de l\'initialisation du paiement');
     return result.data;
+  }
+
+  async confirmPaymentManual(reservationId: number, paymentIntentId: string): Promise<void> {
+    const response = await fetchWithAuth(
+      `${API_CONFIG.CORE_URL}/reservations/${reservationId}/confirm-payment`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ payment_id: paymentIntentId }),
+      }
+    );
+
+    if (!response.ok) {
+      const error = await parseResponse<any>(response);
+      throw new Error(error.message || 'Erreur lors de la confirmation');
+    }
   }
 }
 

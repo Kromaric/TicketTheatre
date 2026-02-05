@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { loadStripe } from "@stripe/stripe-js";
-import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Box,
   Button,
@@ -18,76 +16,14 @@ import { coreService, type Reservation } from "../services/core.service";
 import { useAuth } from "../contexts/AuthContext";
 import { toaster } from "../components/ui/toaster";
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
-
-function CheckoutForm({ reservation, onSuccess }: { reservation: Reservation; onSuccess: () => void }) {
-  const stripe = useStripe();
-  const elements = useElements();
-  const [processing, setProcessing] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!stripe || !elements) return;
-
-    setProcessing(true);
-
-    try {
-      const { error } = await stripe.confirmPayment({
-        elements,
-        confirmParams: {
-          return_url: `${window.location.origin}/confirmation-paiement/${reservation.id}`,
-        },
-      });
-
-      if (error) {
-        toaster.error({
-          title: "Erreur de paiement",
-          description: error.message,
-        });
-      }
-    } catch (err) {
-      toaster.error({
-        title: "Erreur",
-        description: "Une erreur est survenue lors du paiement",
-      });
-    } finally {
-      setProcessing(false);
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit}>
-      <Stack gap={4}>
-        <Box bg="gray.700" p={6} borderRadius="md">
-          <PaymentElement />
-        </Box>
-
-        <Button
-          type="submit"
-          w="full"
-          size="lg"
-          bg="green.600"
-          color="white"
-          _hover={{ bg: "green.500" }}
-          isDisabled={!stripe || processing}
-          isLoading={processing}
-          loadingText="Traitement..."
-        >
-          Payer {reservation.total_price} €
-        </Button>
-      </Stack>
-    </form>
-  );
-}
-
 export default function PaiementPage() {
   const { reservationId } = useParams<{ reservationId: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
   const [reservation, setReservation] = useState<Reservation | null>(null);
-  const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [redirecting, setRedirecting] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -95,10 +31,18 @@ export default function PaiementPage() {
       return;
     }
 
+    const canceled = searchParams.get("canceled");
+    if (canceled) {
+      toaster.error({
+        title: "Paiement annulé",
+        description: "Vous avez annulé le paiement",
+      });
+    }
+
     if (reservationId) {
       loadReservation(parseInt(reservationId));
     }
-  }, [reservationId, isAuthenticated]);
+  }, [reservationId, isAuthenticated, searchParams]);
 
   const loadReservation = async (id: number) => {
     try {
@@ -113,12 +57,6 @@ export default function PaiementPage() {
       }
 
       setReservation(data);
-
-      // Si pas encore de paiement initié
-      if (!data.payment_id && user) {
-        const paymentData = await coreService.initiatePayment(id, user.email);
-        setClientSecret(paymentData.client_secret);
-      }
     } catch (error) {
       console.error('Erreur chargement réservation:', error);
       toaster.error({
@@ -128,6 +66,27 @@ export default function PaiementPage() {
       navigate("/mes-reservations");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePayment = async () => {
+    if (!reservation || !user) return;
+
+    setRedirecting(true);
+    try {
+      const paymentData = await coreService.initiatePayment(
+        reservation.id,
+        user.email
+      );
+
+      // Rediriger vers Stripe Checkout
+      window.location.href = paymentData.checkout_url;
+    } catch (error) {
+      toaster.error({
+        title: "Erreur de paiement",
+        description: error instanceof Error ? error.message : "Impossible d'initier le paiement",
+      });
+      setRedirecting(false);
     }
   };
 
@@ -278,27 +237,28 @@ export default function PaiementPage() {
           <Stack gap={4}>
             <Heading size="md">Paiement sécurisé</Heading>
             <Text color="gray.400">
-              Votre paiement est sécurisé par Stripe. Vos informations bancaires ne sont jamais stockées sur nos serveurs.
+              Vous allez être redirigé vers Stripe pour effectuer le paiement de manière sécurisée.
             </Text>
 
-            {clientSecret ? (
-              <Elements stripe={stripePromise} options={{ clientSecret }}>
-                <CheckoutForm 
-                  reservation={reservation} 
-                  onSuccess={() => navigate("/mes-reservations")}
-                />
-              </Elements>
-            ) : (
-              <Center p={6}>
-                <Spinner size="lg" color="red.500" />
-              </Center>
-            )}
+            <Button
+              w="full"
+              size="lg"
+              bg="green.600"
+              color="white"
+              _hover={{ bg: "green.500" }}
+              onClick={handlePayment}
+              isLoading={redirecting}
+              loadingText="Redirection..."
+            >
+              Payer {reservation.total_price} € avec Stripe
+            </Button>
 
             <Button
               w="full"
               variant="outline"
               colorScheme="red"
               onClick={handleCancel}
+              isDisabled={redirecting}
             >
               Annuler la réservation
             </Button>

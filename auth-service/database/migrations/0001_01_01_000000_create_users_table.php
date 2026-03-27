@@ -5,17 +5,17 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Migration de test UNIQUEMENT — reproduit le schéma partagé du core-service.
- * Cette migration n'existe pas en production : la BD est gérée par le core-service.
+ * Migration de test UNIQUEMENT — reproduit le schéma final de la BD partagée du core-service.
+ * En une seule passe pour compatibilité SQLite (pas de dropColumn / after).
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        // Étape 1 : table de base identique à core-service (create_users_table)
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            $table->string('first_name');
+            $table->string('last_name');
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
@@ -23,19 +23,12 @@ return new class extends Migration
             $table->string('phone_number')->nullable();
             $table->string('sex', 10)->nullable();
             $table->date('date_of_birth')->nullable();
+            $table->string('avatar')->nullable();
+            $table->boolean('is_active')->default(true);
+            $table->json('preferences')->nullable();
             $table->rememberToken();
-            $table->timestamps();
-        });
-
-        // Étape 2 : alter identique à update_users_table du core-service
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('name');
-            $table->string('first_name')->after('id');
-            $table->string('last_name')->after('first_name');
-            $table->string('avatar')->nullable()->after('date_of_birth');
-            $table->boolean('is_active')->default(true)->after('avatar');
-            $table->json('preferences')->nullable()->after('is_active');
             $table->softDeletes();
+            $table->timestamps();
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

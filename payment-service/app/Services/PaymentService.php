@@ -18,6 +18,77 @@ class PaymentService
     }
 
     /**
+     * Create a Stripe Checkout Session
+     *
+     * @param array $data
+     * @return array
+     * @throws ApiErrorException
+     */
+    public function createCheckoutSession(array $data): array
+    {
+        $amount = (int)($data['amount'] * 100); // Convert to cents
+
+        // Convert metadata values to strings
+        $metadata = [];
+        if (isset($data['metadata']) && is_array($data['metadata'])) {
+            foreach ($data['metadata'] as $key => $value) {
+                $metadata[$key] = is_array($value) || is_object($value)
+                    ? json_encode($value)
+                    : (string)$value;
+            }
+        }
+
+        // Create checkout session
+        $session = $this->stripe->checkout->sessions->create([
+            'payment_method_types' => ['card'],
+            'line_items' => [[
+                'price_data' => [
+                    'currency' => $data['currency'] ?? 'eur',
+                    'unit_amount' => $amount,
+                    'product_data' => [
+                        'name' => $data['description'] ?? 'Réservation',
+                    ],
+                ],
+                'quantity' => 1,
+            ]],
+            'mode' => 'payment',
+            'success_url' => $data['success_url'],
+            'cancel_url' => $data['cancel_url'],
+            'customer_email' => $data['customer_email'] ?? null,
+            'metadata' => $metadata,
+        ]);
+
+        // Store payment in database
+        $payment = Payment::create([
+            'stripe_payment_intent_id' => $session->payment_intent,
+            'user_id' => $data['user_id'],
+            'order_id' => $data['order_id'] ?? null,
+            'amount' => $data['amount'],
+            'currency' => $data['currency'] ?? 'eur',
+            'status' => 'pending',
+            'customer_email' => $data['customer_email'] ?? null,
+            'description' => $data['description'] ?? null,
+            'metadata' => $data['metadata'] ?? null,
+        ]);
+
+        // Create initial transaction record
+        Transaction::create([
+            'payment_id' => $payment->id,
+            'stripe_transaction_id' => $session->id,
+            'type' => 'charge',
+            'amount' => $data['amount'],
+            'currency' => $data['currency'] ?? 'eur',
+            'status' => 'pending',
+        ]);
+
+        return [
+            'payment' => $payment,
+            'session_id' => $session->id,
+            'checkout_url' => $session->url,
+        ];
+    }
+
+    /**
      * Create a payment intent with Stripe.
      *
      * @param array $data

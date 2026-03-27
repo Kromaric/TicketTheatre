@@ -15,6 +15,50 @@ class PaymentServiceClient
     }
 
     /**
+     * Créer une session Stripe Checkout
+     */
+    public function createCheckoutSession(array $data): array
+    {
+        try {
+            $response = Http::timeout(30)
+                ->post("{$this->baseUrl}/payments/checkout", [
+                    'amount' => $data['amount'],
+                    'currency' => $data['currency'] ?? 'eur',
+                    'user_id' => $data['user_id'],
+                    'order_id' => $data['reservation_id'] ?? null,
+                    'customer_email' => $data['customer_email'],
+                    'description' => $data['description'] ?? 'Réservation TicketTheatre',
+                    'success_url' => $data['success_url'],
+                    'cancel_url' => $data['cancel_url'],
+                    'metadata' => $data['metadata'] ?? [],
+                ]);
+
+            if ($response->successful()) {
+                return [
+                    'success' => true,
+                    'data' => $response->json(),
+                ];
+            }
+
+            Log::error('Payment Service Error', [
+                'status' => $response->status(),
+                'body' => $response->body()
+            ]);
+
+            return [
+                'success' => false,
+                'error' => $response->json('message') ?? 'Payment service error',
+            ];
+        } catch (\Exception $e) {
+            Log::error('Payment Service Exception: ' . $e->getMessage());
+            return [
+                'success' => false,
+                'error' => 'Payment service unavailable',
+            ];
+        }
+    }
+
+    /**
      * Créer un payment intent
      */
     public function createPaymentIntent(array $data): array

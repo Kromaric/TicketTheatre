@@ -8,32 +8,26 @@ use App\Models\Seance;
 use App\Services\PaymentServiceClient;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 
 class ReservationController extends Controller
 {
-    /**
-     * Display a listing of reservations.
-     */
     public function index(Request $request)
     {
         $query = Reservation::with(['user', 'seance.spectacle', 'seance.hall']);
 
-        // Filtre par utilisateur
         if ($request->filled('user_id')) {
             $query->where('user_id', $request->user_id);
         }
 
-        // Filtre par statut
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
-        // Filtre par statut de paiement
         if ($request->filled('payment_status')) {
             $query->where('payment_status', $request->payment_status);
         }
 
-        // Filtre par référence
         if ($request->filled('booking_reference')) {
             $query->where('booking_reference', 'like', '%' . $request->booking_reference . '%');
         }
@@ -47,9 +41,6 @@ class ReservationController extends Controller
         ]);
     }
 
-    /**
-     * Store a newly created reservation.
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -62,7 +53,6 @@ class ReservationController extends Controller
 
         $seance = Seance::findOrFail($validated['seance_id']);
 
-        // Vérifier que la séance est disponible
         if ($seance->status !== 'scheduled') {
             return response()->json([
                 'success' => false,
@@ -70,7 +60,6 @@ class ReservationController extends Controller
             ], 422);
         }
 
-        // Vérifier que la séance n'est pas passée
         if ($seance->date_seance < now()) {
             return response()->json([
                 'success' => false,
@@ -78,7 +67,6 @@ class ReservationController extends Controller
             ], 422);
         }
 
-        // Calculer les places disponibles
         $bookedSeats = $seance->reservations()
             ->whereIn('status', ['confirmed', 'pending'])
             ->sum('quantity');
@@ -92,13 +80,9 @@ class ReservationController extends Controller
             ], 422);
         }
 
-        // Calculer le prix total
         $totalPrice = $seance->price * $validated['quantity'];
-
-        // Générer une référence unique
         $bookingReference = 'TH-' . date('Y') . '-' . strtoupper(Str::random(6));
 
-        // Créer la réservation
         $reservation = Reservation::create([
             'user_id' => $validated['user_id'],
             'seance_id' => $validated['seance_id'],
@@ -108,7 +92,7 @@ class ReservationController extends Controller
             'total_price' => $totalPrice,
             'status' => 'pending',
             'payment_status' => 'pending',
-            'expires_at' => now()->addMinutes(15), // 15 minutes pour payer
+            'expires_at' => now()->addMinutes(15),
         ]);
 
         $reservation->load(['seance.spectacle', 'seance.hall', 'user']);
@@ -120,16 +104,12 @@ class ReservationController extends Controller
         ], 201);
     }
 
-    /**
-     * Initier le paiement pour une réservation
-     */
     public function initiatePayment(Request $request, Reservation $reservation)
     {
         $validated = $request->validate([
             'customer_email' => 'required|email',
         ]);
 
-        // Vérifier que la réservation est en attente
         if ($reservation->payment_status !== 'pending') {
             return response()->json([
                 'success' => false,
@@ -137,7 +117,6 @@ class ReservationController extends Controller
             ], 422);
         }
 
-        // Vérifier que la réservation n'a pas expiré
         if ($reservation->expires_at && $reservation->expires_at < now()) {
             $reservation->update(['status' => 'expired']);
             
@@ -147,53 +126,61 @@ class ReservationController extends Controller
             ], 422);
         }
 
-        // Appeler le Payment Service
+        $frontendUrl = env('FRONTEND_URL', 'http://localhost:5173');
+        
+        Log::info('Initiate payment', [
+            'reservation_id' => $reservation->id,
+            'amount' => $reservation->total_price,
+            'frontend_url' => $frontendUrl
+        ]);
+        
         $paymentClient = new PaymentServiceClient();
-        $result = $paymentClient->createPaymentIntent([
+        $result = $paymentClient->createCheckoutSession([
             'amount' => $reservation->total_price,
             'currency' => 'eur',
             'user_id' => $reservation->user_id,
             'reservation_id' => $reservation->id,
             'customer_email' => $validated['customer_email'],
             'description' => "Réservation {$reservation->booking_reference}",
+            'success_url' => "{$frontendUrl}/confirmation-paiement/{$reservation->id}?session_id={{CHECKOUT_SESSION_ID}}",
+            'cancel_url' => "{$frontendUrl}/paiement/{$reservation->id}?canceled=true",
             'metadata' => [
-                'reservation_id' => $reservation->id,
+                'reservation_id' => (string)$reservation->id,
                 'booking_reference' => $reservation->booking_reference,
-                'seance_id' => $reservation->seance_id,
-                'quantity' => $reservation->quantity,
+                'seance_id' => (string)$reservation->seance_id,
+                'quantity' => (string)$reservation->quantity,
             ],
         ]);
 
+        Log::info('Payment service response', ['result' => $result]);
+
         if (!$result['success']) {
+            Log::error('Payment creation failed', ['error' => $result['error']]);
             return response()->json([
                 'success' => false,
                 'message' => 'Erreur lors de la création du paiement',
-                'error' => $result['error']
+                'error' => $result['error'] ?? 'Unknown error'
             ], 500);
         }
 
-        // Mettre à jour la réservation avec l'ID du paiement
         $paymentData = $result['data']['data'];
         $reservation->update([
-            'payment_id' => $paymentData['id'], // ID dans payment-service
+            'payment_id' => $paymentData['id'],
         ]);
 
         $reservation->load(['seance.spectacle', 'seance.hall', 'user']);
 
         return response()->json([
             'success' => true,
-            'message' => 'Paiement initialisé avec succès',
+            'message' => 'Session de paiement créée',
             'data' => [
                 'reservation' => $reservation,
                 'payment' => $paymentData,
-                'client_secret' => $result['data']['client_secret'],
+                'checkout_url' => $result['data']['checkout_url'],
             ]
         ]);
     }
 
-    /**
-     * Display the specified reservation.
-     */
     public function show(Reservation $reservation)
     {
         $reservation->load(['user', 'seance.spectacle.category', 'seance.hall']);
@@ -204,9 +191,6 @@ class ReservationController extends Controller
         ]);
     }
 
-    /**
-     * Update the specified reservation.
-     */
     public function update(Request $request, Reservation $reservation)
     {
         $validated = $request->validate([
@@ -216,12 +200,10 @@ class ReservationController extends Controller
             'cancellation_reason' => 'nullable|string',
         ]);
 
-        // Si confirmation
         if (isset($validated['status']) && $validated['status'] === 'confirmed') {
             $validated['confirmed_at'] = now();
         }
 
-        // Si annulation
         if (isset($validated['status']) && $validated['status'] === 'cancelled') {
             $validated['cancelled_at'] = now();
         }
@@ -236,12 +218,8 @@ class ReservationController extends Controller
         ]);
     }
 
-    /**
-     * Cancel a reservation.
-     */
     public function cancel(Request $request, Reservation $reservation)
     {
-        // Vérifier que la réservation peut être annulée
         if ($reservation->status === 'cancelled') {
             return response()->json([
                 'success' => false,
@@ -268,16 +246,12 @@ class ReservationController extends Controller
         ]);
     }
 
-    /**
-     * Confirm payment for a reservation.
-     */
     public function confirmPayment(Request $request, Reservation $reservation)
     {
         $validated = $request->validate([
             'payment_id' => 'required|string|max:255',
         ]);
 
-        // Vérifier que la réservation est en attente
         if ($reservation->payment_status !== 'pending') {
             return response()->json([
                 'success' => false,
@@ -285,7 +259,6 @@ class ReservationController extends Controller
             ], 422);
         }
 
-        // Vérifier que la réservation n'a pas expiré
         if ($reservation->expires_at && $reservation->expires_at < now()) {
             $reservation->update(['status' => 'expired']);
             
@@ -311,9 +284,6 @@ class ReservationController extends Controller
         ]);
     }
 
-    /**
-     * Get user reservations.
-     */
     public function userReservations($userId)
     {
         $reservations = Reservation::with(['seance.spectacle', 'seance.hall'])
@@ -327,9 +297,6 @@ class ReservationController extends Controller
         ]);
     }
 
-    /**
-     * Get reservation by booking reference.
-     */
     public function getByReference($reference)
     {
         $reservation = Reservation::with(['user', 'seance.spectacle', 'seance.hall'])

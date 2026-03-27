@@ -283,8 +283,10 @@ class AuthControllerTest extends TestCase
         $logoutResponse = $this->withToken($token)->postJson('/api/logout');
         $logoutResponse->assertStatus(200);
 
-        // 4. Me après logout → 401
-        $this->withToken($token)->getJson('/api/user')->assertStatus(401);
+        // 4. Vérifier que le token a bien été révoqué en BD
+        // (Sanctum met en cache le token résolu dans le même processus PHP,
+        // ce qui rend un appel HTTP post-logout non fiable en test)
+        $this->assertCount(0, $user->fresh()->tokens);
     }
 
     /** @test */

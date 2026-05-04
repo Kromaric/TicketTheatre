@@ -21,23 +21,33 @@ jobs:
       # lancement des services
       - name: Install & Start Microservices
         run: |
+          # --- AUTH SERVICE ---
           cd auth-service && composer install && cp .env.example .env
-          SHARED_KEY=$(php artisan key:generate --show --no-ansi)
+          SHARED_KEY=$(php artisan key:generate --show --no-ansi | tr -d '\r')
           sed -i "s|APP_KEY=.*|APP_KEY=$SHARED_KEY|" .env
+          # On force le driver de session en 'cookie' pour éviter les erreurs de table manquante en CI
+          sed -i "s|SESSION_DRIVER=.*|SESSION_DRIVER=cookie|" .env
           touch database/database.sqlite && php artisan migrate --seed --force
           php artisan serve --port=8081 &
 
+          # --- CORE SERVICE ---
           cd ../core-service && composer install && cp .env.example .env
           sed -i "s|APP_KEY=.*|APP_KEY=$SHARED_KEY|" .env
+          sed -i "s|SESSION_DRIVER=.*|SESSION_DRIVER=cookie|" .env
+          # On s'assure que le Core pointe bien vers le Payment Service
+          sed -i "s|PAYMENT_SERVICE_URL=.*|PAYMENT_SERVICE_URL=http://127.0.0.1:8083/api|" .env
           touch database/database.sqlite && php artisan migrate --seed --force
           php artisan serve --port=8082 &
 
+          # --- PAYMENT SERVICE ---
           cd ../payment-service && composer install && cp .env.example .env
-          sed -i 's|STRIPE_SECRET=.*|STRIPE_SECRET=${{ secrets.STRIPE_TEST_KEY }}|' .env
           sed -i "s|APP_KEY=.*|APP_KEY=$SHARED_KEY|" .env
-          sed -i "s|SERVICES_KEY=.*|SERVICES_KEY=$SHARED_KEY|" .env
+          sed -i "s|SESSION_DRIVER=.*|SESSION_DRIVER=cookie|" .env
+          sed -i "s|STRIPE_SECRET=.*|STRIPE_SECRET=${{ secrets.STRIPE_TEST_KEY }}|" .env
           touch database/database.sqlite && php artisan migrate --seed --force
           php artisan serve --port=8083 &
+
+          sleep 5
 
       # Front end
       - name: Cypress run
@@ -46,10 +56,13 @@ jobs:
           working-directory: frontend
           install-command: npm install
           start: npm run dev
-          wait-on: "http://localhost:5173"
+          wait-on: "http://127.0.0.1:5173"
           command: npx cypress run --browser chrome
         env:
           STRIPE_KEY: ${{ secrets.STRIPE_TEST_KEY }}
+          VITE_AUTH_URL: http://127.0.0.1:8081/api
+          VITE_CORE_URL: http://127.0.0.1:8082/api
+          VITE_PAYMENT_URL: http://127.0.0.1:8083/api
 
       - name: Upload Screenshots
         uses: actions/upload-artifact@v4

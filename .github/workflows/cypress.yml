@@ -38,8 +38,8 @@ jobs:
           build: npm run build
           start: npm run dev
           wait-on: "http://localhost:5173"
-          env:
-            STRIPE_KEY: ${{ secrets.STRIPE_TEST_KEY }}
+        env:
+          STRIPE_KEY: ${{ secrets.STRIPE_TEST_KEY }}
 
       - name: Upload Screenshots
         uses: actions/upload-artifact@v4

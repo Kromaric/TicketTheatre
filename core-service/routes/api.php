@@ -44,8 +44,6 @@ Route::prefix('public')->group(function () {
 });
 
 // Routes publiques de réservation (sans auth)
-Route::post('/reservations', [ReservationController::class, 'store']);
-Route::post('/reservations/{reservation}/initiate-payment', [ReservationController::class, 'initiatePayment']);
 
 // Routes protégées (nécessitent authentification Sanctum)
 Route::middleware('auth:sanctum')->group(function () {
@@ -63,6 +61,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // Séances (Admin seulement)
     Route::apiResource('seances', SeanceController::class)->except(['index', 'show']);
 
+
+    Route::post('/reservations', [ReservationController::class, 'store']);
+    Route::post('/reservations/{reservation}/initiate-payment', [ReservationController::class, 'initiatePayment']);
+    
     // Réservations protégées
     Route::get('reservations', [ReservationController::class, 'index']);
     Route::get('reservations/{reservation}', [ReservationController::class, 'show']);

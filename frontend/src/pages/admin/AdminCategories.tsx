@@ -1,5 +1,17 @@
 import { useEffect, useState } from "react";
-import { Box, Button, Card, Heading, Table, Spinner, Center, Input, Flex, Stack, Text } from "@chakra-ui/react";
+import {
+  Box,
+  Button,
+  Card,
+  Heading,
+  Table,
+  Spinner,
+  Center,
+  Input,
+  Flex,
+  Stack,
+  Text,
+} from "@chakra-ui/react";
 import { coreService, type Category } from "../../services/core.service";
 import { toaster } from "../../components/ui/toaster";
 import { useAuth } from "../../contexts/AuthContext";
@@ -15,7 +27,7 @@ export default function AdminCategories() {
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
-    if (!user || user.role !== 'admin') {
+    if (!user || user.role !== "admin") {
       navigate("/");
       return;
     }
@@ -27,7 +39,10 @@ export default function AdminCategories() {
       const data = await coreService.getCategories();
       setCategories(data);
     } catch (error) {
-      toaster.error({ title: "Erreur", description: "Impossible de charger les catégories" });
+      toaster.error({
+        title: "Erreur",
+        description: "Impossible de charger les catégories",
+      });
     } finally {
       setLoading(false);
     }
@@ -46,19 +61,28 @@ export default function AdminCategories() {
       setCreating(false);
       loadCategories();
     } catch (error) {
-      toaster.error({ title: "Erreur", description: "Impossible de créer la catégorie" });
+      toaster.error({
+        title: "Erreur",
+        description: "Impossible de créer la catégorie",
+      });
     }
   };
 
   const handleUpdate = async (id: number) => {
     try {
       await coreService.updateCategory(id, formData);
-      toaster.success({ title: "Succès", description: "Catégorie mise à jour" });
+      toaster.success({
+        title: "Succès",
+        description: "Catégorie mise à jour",
+      });
       setEditingId(null);
       setFormData({ name: "", description: "" });
       loadCategories();
     } catch (error) {
-      toaster.error({ title: "Erreur", description: "Impossible de mettre à jour" });
+      toaster.error({
+        title: "Erreur",
+        description: "Impossible de mettre à jour",
+      });
     }
   };
 
@@ -70,25 +94,42 @@ export default function AdminCategories() {
       toaster.success({ title: "Succès", description: "Catégorie supprimée" });
       loadCategories();
     } catch (error) {
-      toaster.error({ title: "Erreur", description: "Impossible de supprimer" });
+      toaster.error({
+        title: "Erreur",
+        description: "Impossible de supprimer",
+      });
     }
   };
 
   const startEdit = (category: Category) => {
     setEditingId(category.id);
-    setFormData({ name: category.name, description: category.description || "" });
+    setFormData({
+      name: category.name,
+      description: category.description || "",
+    });
     setCreating(false);
   };
 
   if (loading) {
-    return <Center minH="60vh"><Spinner size="xl" color="red.500" /></Center>;
+    return (
+      <Center minH="60vh">
+        <Spinner size="xl" color="red.500" />
+      </Center>
+    );
   }
 
   return (
     <Box w="full" maxW="1200px" mx="auto" py={8} px={4}>
       <Flex justify="space-between" align="center" mb={6}>
         <Heading size="xl">Gestion des Catégories</Heading>
-        <Button colorScheme="red" onClick={() => { setCreating(true); setEditingId(null); setFormData({ name: "", description: "" }); }}>
+        <Button
+          colorScheme="red"
+          onClick={() => {
+            setCreating(true);
+            setEditingId(null);
+            setFormData({ name: "", description: "" });
+          }}
+        >
           + Nouvelle catégorie
         </Button>
       </Flex>
@@ -98,11 +139,33 @@ export default function AdminCategories() {
           <Card.Body>
             <Stack gap={4}>
               <Heading size="md">Nouvelle catégorie</Heading>
-              <Input placeholder="Nom" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
-              <Input placeholder="Description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} />
+              <Input
+                placeholder="Nom"
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
+              />
+              <Input
+                placeholder="Description"
+                value={formData.description}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
+              />
               <Flex gap={2}>
-                <Button colorScheme="green" onClick={handleCreate}>Créer</Button>
-                <Button variant="outline" onClick={() => { setCreating(false); setFormData({ name: "", description: "" }); }}>Annuler</Button>
+                <Button colorScheme="green" onClick={handleCreate}>
+                  Créer
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setCreating(false);
+                    setFormData({ name: "", description: "" });
+                  }}
+                >
+                  Annuler
+                </Button>
               </Flex>
             </Stack>
           </Card.Body>
@@ -126,14 +189,29 @@ export default function AdminCategories() {
                   <Table.Cell>{cat.id}</Table.Cell>
                   <Table.Cell>
                     {editingId === cat.id ? (
-                      <Input size="sm" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
+                      <Input
+                        size="sm"
+                        value={formData.name}
+                        onChange={(e) =>
+                          setFormData({ ...formData, name: e.target.value })
+                        }
+                      />
                     ) : (
                       cat.name
                     )}
                   </Table.Cell>
                   <Table.Cell>
                     {editingId === cat.id ? (
-                      <Input size="sm" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} />
+                      <Input
+                        size="sm"
+                        value={formData.description}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            description: e.target.value,
+                          })
+                        }
+                      />
                     ) : (
                       cat.description || "-"
                     )}
@@ -141,13 +219,40 @@ export default function AdminCategories() {
                   <Table.Cell>
                     {editingId === cat.id ? (
                       <Flex gap={2}>
-                        <Button size="sm" colorScheme="green" onClick={() => handleUpdate(cat.id)}>Sauver</Button>
-                        <Button size="sm" variant="outline" onClick={() => { setEditingId(null); setFormData({ name: "", description: "" }); }}>Annuler</Button>
+                        <Button
+                          size="sm"
+                          colorScheme="green"
+                          onClick={() => handleUpdate(cat.id)}
+                        >
+                          Sauver
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setEditingId(null);
+                            setFormData({ name: "", description: "" });
+                          }}
+                        >
+                          Annuler
+                        </Button>
                       </Flex>
                     ) : (
                       <Flex gap={2}>
-                        <Button size="sm" variant="outline" onClick={() => startEdit(cat)}>Éditer</Button>
-                        <Button size="sm" colorScheme="red" onClick={() => handleDelete(cat.id)}>Supprimer</Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => startEdit(cat)}
+                        >
+                          Éditer
+                        </Button>
+                        <Button
+                          size="sm"
+                          colorScheme="red"
+                          onClick={() => handleDelete(cat.id)}
+                        >
+                          Supprimer
+                        </Button>
                       </Flex>
                     )}
                   </Table.Cell>

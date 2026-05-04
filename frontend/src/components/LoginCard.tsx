@@ -15,6 +15,7 @@ export const LoginCard = () => {
   const navigate = useNavigate();
 
   const handleSubmit = async () => {
+    console.log("URL AUTH CIBLÉE :", import.meta.env.VITE_AUTH_URL);
     if (!email || !password) {
       toaster.error({
         title: "Erreur",
@@ -34,7 +35,10 @@ export const LoginCard = () => {
     } catch (error) {
       toaster.error({
         title: "Erreur de connexion",
-        description: error instanceof Error ? error.message : "Email ou mot de passe incorrect",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Email ou mot de passe incorrect",
       });
     } finally {
       setIsLoading(false);
@@ -42,19 +46,13 @@ export const LoginCard = () => {
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       handleSubmit();
     }
   };
 
   return (
-    <Card.Root
-      maxW="sm"
-      bg="yellow.500"
-      color="black"
-      borderRadius="lg"
-      p="4"
-    >
+    <Card.Root maxW="sm" bg="yellow.500" color="black" borderRadius="lg" p="4">
       <Card.Header>
         <Card.Title textAlign="center" textTransform="uppercase">
           Se connecter
@@ -66,6 +64,7 @@ export const LoginCard = () => {
           <Field.Root>
             <Field.Label>Email</Field.Label>
             <Input
+              name="email"
               type="email"
               bg="white"
               color="black"
@@ -79,6 +78,7 @@ export const LoginCard = () => {
           <Field.Root>
             <Field.Label>Mot de passe</Field.Label>
             <Input
+              name="password"
               type="password"
               bg="white"
               color="black"
@@ -95,6 +95,7 @@ export const LoginCard = () => {
         <Flex gap="4">
           <TicketLabel text="Créer son compte" to="/register" />
           <TicketLabel
+            data-cy="login-submit-button"
             text={isLoading ? "Connexion..." : "Se connecter"}
             onClick={handleSubmit}
           />

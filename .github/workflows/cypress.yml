@@ -1,0 +1,66 @@
+name: Cypress E2E Tests
+on: [push]
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  cypress-run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # --- CONFIGURATION PHP (Pour tes 3 Microservices) ---
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: mbstring, dom, curl, libxml, sqlite3
+
+      # lancement des services
+      - name: Install & Start Microservices
+        run: |
+          cd auth-service && composer install && cp .env.example .env
+          SHARED_KEY=$(php artisan key:generate --show --no-ansi)
+          sed -i "s|APP_KEY=.*|APP_KEY=$SHARED_KEY|" .env
+          touch database/database.sqlite && php artisan migrate --seed --force
+          php artisan serve --port=8081 &
+
+          cd ../core-service && composer install && cp .env.example .env
+          sed -i "s|APP_KEY=.*|APP_KEY=$SHARED_KEY|" .env
+          touch database/database.sqlite && php artisan migrate --seed --force
+          php artisan serve --port=8082 &
+
+          cd ../payment-service && composer install && cp .env.example .env
+          sed -i 's|STRIPE_SECRET=.*|STRIPE_SECRET=${{ secrets.STRIPE_TEST_KEY }}|' .env
+          sed -i "s|APP_KEY=.*|APP_KEY=$SHARED_KEY|" .env
+          sed -i "s|SERVICES_KEY=.*|SERVICES_KEY=$SHARED_KEY|" .env
+          touch database/database.sqlite && php artisan migrate --seed --force
+          php artisan serve --port=8083 &
+
+      # Front end
+      - name: Cypress run
+        uses: cypress-io/github-action@v6
+        with:
+          working-directory: frontend
+          install-command: npm install
+          start: npm run dev
+          wait-on: "http://localhost:5173"
+          command: npx cypress run --browser chrome
+        env:
+          STRIPE_KEY: ${{ secrets.STRIPE_TEST_KEY }}
+
+      - name: Upload Screenshots
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: cypress-screenshots
+          path: frontend/cypress/screenshots
+
+      - name: Upload Videos
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cypress-videos
+          path: frontend/cypress/videos

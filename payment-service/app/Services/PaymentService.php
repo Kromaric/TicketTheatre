@@ -60,7 +60,7 @@ class PaymentService
 
         // Store payment in database
         $payment = Payment::create([
-            'stripe_payment_intent_id' => $session->payment_intent,
+            'stripe_payment_intent_id' => $session->payment_intent ?? $session->id,
             'user_id' => $data['user_id'],
             'order_id' => $data['order_id'] ?? null,
             'amount' => $data['amount'],
@@ -74,7 +74,7 @@ class PaymentService
         // Create initial transaction record
         Transaction::create([
             'payment_id' => $payment->id,
-            'stripe_transaction_id' => $session->id,
+            'stripe_transaction_id' => $session->payment_intent ?? $session->id,
             'type' => 'charge',
             'amount' => $data['amount'],
             'currency' => $data['currency'] ?? 'eur',

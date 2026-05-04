@@ -11,7 +11,7 @@ class PaymentServiceClient
     
     public function __construct()
     {
-        $this->baseUrl = env('PAYMENT_SERVICE_URL', 'http://payment-service-app:80/api');
+        $this->baseUrl = env('PAYMENT_SERVICE_URL', 'http://127.0.0.1:8083/api');
     }
 
     /**

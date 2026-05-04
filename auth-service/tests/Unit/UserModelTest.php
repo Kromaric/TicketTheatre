@@ -4,10 +4,15 @@ namespace Tests\Unit;
 
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class UserModelTest extends TestCase
 {
+    // ---------------------------------------------------------------
+    // Accessor full_name
+    // ---------------------------------------------------------------
+    use RefreshDatabase;
     /** @test */
     public function it_returns_full_name_from_accessor(): void
     {

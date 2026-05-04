@@ -4,8 +4,9 @@ import { Link as RouterLink } from "react-router-dom";
 type TicketLabelProps = {
   text: string;
   variant?: "red" | "yellow";
-  to?: string;  
-  onClick?: () => void;  
+  to?: string;
+  onClick?: () => void;
+  [key: `data-${string}`]: string;
 };
 
 export const TicketLabel = ({
@@ -13,6 +14,7 @@ export const TicketLabel = ({
   variant = "red",
   to,
   onClick,
+  ...rest
 }: TicketLabelProps) => {
   const isYellow = variant === "yellow";
 
@@ -47,6 +49,7 @@ export const TicketLabel = ({
       transition="transform 0.15s ease-out"
       _hover={{ transform: "scale(1.05)" }}
       onClick={onClick}
+      {...rest}
     >
       <Text fontWeight="bold" ml="2" fontSize="sm">
         {text}

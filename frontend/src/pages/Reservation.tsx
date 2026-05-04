@@ -1,5 +1,15 @@
 import { useMemo, useState, useEffect } from "react";
-import { Box, Button, Card, Flex, Input, Stack, Text, Spinner, Center } from "@chakra-ui/react";
+import {
+  Box,
+  Button,
+  Card,
+  Flex,
+  Input,
+  Stack,
+  Text,
+  Spinner,
+  Center,
+} from "@chakra-ui/react";
 import { useParams, useNavigate } from "react-router-dom";
 import { TicketLabel } from "../components/TicketLabel";
 import { coreService, type Seance } from "../services/core.service";
@@ -35,7 +45,7 @@ export default function Reservation() {
       }
       setSeance(data);
     } catch (error) {
-      console.error('Erreur chargement séance:', error);
+      console.error("Erreur chargement séance:", error);
       toaster.error({
         title: "Erreur",
         description: "Impossible de charger la séance",
@@ -48,7 +58,9 @@ export default function Reservation() {
 
   const title = seance?.spectacle?.title ?? "Titre pièce";
   const price = seance?.price ?? 15;
-  const availableSeats = seance ? (seance.remaining_seats || seance.available_seats) : 0;
+  const availableSeats = seance
+    ? seance.remaining_seats || seance.available_seats
+    : 0;
 
   const total = useMemo(() => {
     const q = Number.isFinite(qty) ? qty : 1;
@@ -94,11 +106,11 @@ export default function Reservation() {
         quantity: qty,
       };
 
-      console.log('Création réservation avec données:', reservationData);
+      console.log("Création réservation avec données:", reservationData);
 
       const reservation = await coreService.createReservation(reservationData);
 
-      console.log('Réservation créée avec succès:', reservation);
+      console.log("Réservation créée avec succès:", reservation);
 
       toaster.success({
         title: "Réservation créée",
@@ -108,12 +120,13 @@ export default function Reservation() {
       // Rediriger vers la page de paiement
       navigate(`/paiement/${reservation.id}`);
     } catch (error) {
-      console.error('Erreur complète création réservation:', error);
-      
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : "Impossible de créer la réservation";
-      
+      console.error("Erreur complète création réservation:", error);
+
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Impossible de créer la réservation";
+
       toaster.error({
         title: "Erreur de réservation",
         description: errorMessage,
@@ -126,7 +139,14 @@ export default function Reservation() {
   if (!isAuthenticated) {
     return (
       <Flex justify="center" align="center" minH="60vh" px={4}>
-        <Card.Root w="full" maxW="520px" bg="yellow.500" color="black" borderRadius="lg" p="6">
+        <Card.Root
+          w="full"
+          maxW="520px"
+          bg="yellow.500"
+          color="black"
+          borderRadius="lg"
+          p="6"
+        >
           <Card.Header pb="3">
             <Card.Title textAlign="center" textTransform="uppercase">
               Connexion requise
@@ -138,10 +158,7 @@ export default function Reservation() {
             </Text>
           </Card.Body>
           <Card.Footer justifyContent="center" pt="4">
-            <TicketLabel
-              text="Se connecter"
-              to="/login"
-            />
+            <TicketLabel text="Se connecter" to="/login" />
           </Card.Footer>
         </Card.Root>
       </Flex>
@@ -158,9 +175,20 @@ export default function Reservation() {
 
   return (
     <Flex justify="center" align="center" minH="60vh" px={4}>
-      <Card.Root w="full" maxW="640px" bg="yellow.500" color="black" borderRadius="lg" p="6">
+      <Card.Root
+        w="full"
+        maxW="640px"
+        bg="yellow.500"
+        color="black"
+        borderRadius="lg"
+        p="6"
+      >
         <Card.Header pb="4">
-          <Card.Title textAlign="center" textTransform="uppercase" fontSize="lg">
+          <Card.Title
+            textAlign="center"
+            textTransform="uppercase"
+            fontSize="lg"
+          >
             Réservation
           </Card.Title>
           <Text textAlign="center" mt="2" fontWeight="semibold">
@@ -212,11 +240,19 @@ export default function Reservation() {
               </Box>
 
               <Input
+                name="select"
                 type="number"
                 min={1}
                 max={Math.min(10, availableSeats)}
                 value={qty}
-                onChange={(e) => setQty(Math.max(1, Math.min(availableSeats, Number(e.target.value || 1))))}
+                onChange={(e) =>
+                  setQty(
+                    Math.max(
+                      1,
+                      Math.min(availableSeats, Number(e.target.value || 1)),
+                    ),
+                  )
+                }
                 w="120px"
                 bg="white"
                 color="black"
@@ -246,11 +282,7 @@ export default function Reservation() {
               Procéder au paiement
             </Button>
 
-            <Button
-              w="full"
-              variant="ghost"
-              onClick={() => navigate(-1)}
-            >
+            <Button w="full" variant="ghost" onClick={() => navigate(-1)}>
               Retour
             </Button>
           </Stack>

@@ -65,8 +65,8 @@ class PaymentController extends Controller
             'order_id' => 'sometimes|integer',
             'customer_email' => 'sometimes|email',
             'description' => 'sometimes|string|max:500',
-            'success_url' => 'required|url',
-            'cancel_url' => 'required|url',
+            'success_url' => 'required|string',
+            'cancel_url' => 'required|string',
             'metadata' => 'sometimes|array',
         ]);
 

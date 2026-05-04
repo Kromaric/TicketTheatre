@@ -142,8 +142,8 @@ class ReservationController extends Controller
             'reservation_id' => $reservation->id,
             'customer_email' => $validated['customer_email'],
             'description' => "Réservation {$reservation->booking_reference}",
-            'success_url' => "{$frontendUrl}/confirmation-paiement/{$reservation->id}?session_id={{CHECKOUT_SESSION_ID}}",
-            'cancel_url' => "{$frontendUrl}/paiement/{$reservation->id}?canceled=true",
+            'success_url' => $frontendUrl . "/confirmation-paiement/" . $reservation->id . "?session_id={CHECKOUT_SESSION_ID}",
+            'cancel_url' => $frontendUrl . "/paiement/" . $reservation->id . "?canceled=true",
             'metadata' => [
                 'reservation_id' => (string)$reservation->id,
                 'booking_reference' => $reservation->booking_reference,

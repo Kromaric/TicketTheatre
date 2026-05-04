@@ -38,7 +38,7 @@ jobs:
         uses: cypress-io/github-action@v6
         with:
           working-directory: frontend
-          build: npm run build
+          build: npm install
           start: npm run dev
           wait-on: "http://localhost:5173"
           command: npx cypress run

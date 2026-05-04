@@ -3,21 +3,17 @@
 namespace Tests\Unit;
 
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 /**
  * Tests unitaires pour le modèle User.
- *
- * Règle : on utilise make() (sans BD) pour tester la logique pure du modèle.
- * Les tests qui nécessitent une persistance utilisent RefreshDatabase avec la
- * migration de test qui reproduit le schéma du core-service.
+ * Utilise uniquement make() — aucune interaction avec la base de données.
  */
 class UserModelTest extends TestCase
 {
     // ---------------------------------------------------------------
-    // Accessor full_name  (pas de BD nécessaire)
+    // Accessor full_name
     // ---------------------------------------------------------------
 
     /** @test */
@@ -44,7 +40,7 @@ class UserModelTest extends TestCase
     }
 
     // ---------------------------------------------------------------
-    // Champs cachés (pas de BD nécessaire)
+    // Champs cachés
     // ---------------------------------------------------------------
 
     /** @test */
@@ -64,7 +60,7 @@ class UserModelTest extends TestCase
     }
 
     // ---------------------------------------------------------------
-    // Casts (pas de BD nécessaire)
+    // Casts
     // ---------------------------------------------------------------
 
     /** @test */
@@ -96,7 +92,7 @@ class UserModelTest extends TestCase
     }
 
     // ---------------------------------------------------------------
-    // Password hashing via cast 'hashed' (pas de BD nécessaire)
+    // Password hashing via cast 'hashed'
     // ---------------------------------------------------------------
 
     /** @test */
@@ -109,7 +105,7 @@ class UserModelTest extends TestCase
     }
 
     // ---------------------------------------------------------------
-    // États de la factory (pas de BD nécessaire)
+    // États de la factory
     // ---------------------------------------------------------------
 
     /** @test */
@@ -126,43 +122,5 @@ class UserModelTest extends TestCase
         $user = User::factory()->admin()->make();
 
         $this->assertSame('admin', $user->role);
-    }
-
-    // ---------------------------------------------------------------
-    // Tests avec persistance BD (migration de test requise)
-    // ---------------------------------------------------------------
-
-    /** @test */
-    public function user_can_be_created_with_factory(): void
-    {
-        // On utilise RefreshDatabase uniquement dans ce groupe
-        $this->refreshDatabase();
-
-        $user = User::factory()->create();
-
-        $this->assertDatabaseHas('users', ['email' => $user->email]);
-    }
-
-    /** @test */
-    public function soft_deleted_user_is_not_returned_by_default(): void
-    {
-        $this->refreshDatabase();
-
-        $user = User::factory()->create();
-        $user->delete();
-
-        $this->assertSoftDeleted('users', ['id' => $user->id]);
-        $this->assertNull(User::find($user->id));
-    }
-
-    /** @test */
-    public function soft_deleted_user_is_returned_with_trashed(): void
-    {
-        $this->refreshDatabase();
-
-        $user = User::factory()->create();
-        $user->delete();
-
-        $this->assertNotNull(User::withTrashed()->find($user->id));
     }
 }

@@ -22,15 +22,21 @@ jobs:
       - name: Install & Start Microservices
         run: |
           cd auth-service && composer install && cp .env.example .env
-          touch database/database.sqlite && php artisan migrate
+          SHARED_KEY=$(php artisan key:generate --show --no-ansi)
+          sed -i "s|APP_KEY=.*|APP_KEY=$SHARED_KEY|" .env
+          touch database/database.sqlite && php artisan migrate --seed --force
           php artisan serve --port=8081 &
 
           cd ../core-service && composer install && cp .env.example .env
-          touch database/database.sqlite && php artisan migrate
+          sed -i "s|APP_KEY=.*|APP_KEY=$SHARED_KEY|" .env
+          touch database/database.sqlite && php artisan migrate --seed --force
           php artisan serve --port=8082 &
 
           cd ../payment-service && composer install && cp .env.example .env
-          touch database/database.sqlite && php artisan migrate
+          sed -i 's|STRIPE_SECRET=.*|STRIPE_SECRET=${{ secrets.STRIPE_TEST_KEY }}|' .env
+          sed -i "s|APP_KEY=.*|APP_KEY=$SHARED_KEY|" .env
+          sed -i "s|SERVICES_KEY=.*|SERVICES_KEY=$SHARED_KEY|" .env
+          touch database/database.sqlite && php artisan migrate --seed --force
           php artisan serve --port=8083 &
 
       # Front end
@@ -38,10 +44,10 @@ jobs:
         uses: cypress-io/github-action@v6
         with:
           working-directory: frontend
-          build: npm install
+          install-command: npm install
           start: npm run dev
           wait-on: "http://localhost:5173"
-          command: npm run cy:run
+          command: npx cypress run --browser chrome
         env:
           STRIPE_KEY: ${{ secrets.STRIPE_TEST_KEY }}
 

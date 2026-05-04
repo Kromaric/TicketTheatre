@@ -9,13 +9,16 @@
     }
   ],
   "compilerOptions": {
+    "types": [
+      "cypress"
+    ],
     "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "skipLibCheck": true,
     "paths": {
       "@/*": [
-        "./src/*"
+        "./src/*",
       ]
     }
   }

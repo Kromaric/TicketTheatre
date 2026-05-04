@@ -24,7 +24,7 @@ export const SignupCard = () => {
    * Met à jour les champs du formulaire.
    */
   const handleChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   /**
@@ -32,7 +32,12 @@ export const SignupCard = () => {
    */
   const handleSubmit = async () => {
     // 1. Validation locale des champs requis
-    if (!formData.first_name || !formData.last_name || !formData.email || !formData.password) {
+    if (
+      !formData.first_name ||
+      !formData.last_name ||
+      !formData.email ||
+      !formData.password
+    ) {
       toaster.error({
         title: "Erreur",
         description: "Veuillez remplir tous les champs obligatoires",
@@ -66,7 +71,7 @@ export const SignupCard = () => {
         last_name: formData.last_name.trim(),
         email: formData.email,
         password: formData.password,
-        password_confirmation: formData.password_confirmation
+        password_confirmation: formData.password_confirmation,
       });
 
       toaster.success({
@@ -76,11 +81,13 @@ export const SignupCard = () => {
 
       // 3. Redirection vers la page de connexion
       navigate("/login");
-
     } catch (error) {
       toaster.error({
         title: "Erreur lors de l'inscription",
-        description: error instanceof Error ? error.message : "Une erreur est survenue lors de l'inscription",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Une erreur est survenue lors de l'inscription",
       });
     } finally {
       setIsLoading(false);
@@ -88,88 +95,92 @@ export const SignupCard = () => {
   };
 
   return (
-      <Card.Root
-          w="full"
-          maxW="420px"
-          bg="yellow.500"
-          color="black"
-          borderRadius="lg"
-          p="5"
-      >
-        <Card.Header pb="2">
-          <Card.Title
-              textAlign="center"
-              textTransform="uppercase"
-              fontSize="md"
-          >
-            Créer son compte
-          </Card.Title>
-        </Card.Header>
+    <Card.Root
+      w="full"
+      maxW="420px"
+      bg="yellow.500"
+      color="black"
+      borderRadius="lg"
+      p="5"
+    >
+      <Card.Header pb="2">
+        <Card.Title textAlign="center" textTransform="uppercase" fontSize="md">
+          Créer son compte
+        </Card.Title>
+      </Card.Header>
 
-        <Card.Body pt="2" pb="3">
-          <Stack gap="3" w="full">
-            <Input
-                placeholder="Nom *"
-                bg="white"
-                color="black"
-                size="sm"
-                _placeholder={{ color: "gray.500" }}
-                value={formData.last_name}
-                onChange={(e) => handleChange('last_name', e.target.value)}
-                disabled={isLoading}
-            />
-            <Input
-                placeholder="Prénom *"
-                bg="white"
-                color="black"
-                size="sm"
-                _placeholder={{ color: "gray.500" }}
-                value={formData.first_name}
-                onChange={(e) => handleChange('first_name', e.target.value)}
-                disabled={isLoading}
-            />
-            <Input
-                type="email"
-                placeholder="Email *"
-                bg="white"
-                color="black"
-                size="sm"
-                _placeholder={{ color: "gray.500" }}
-                value={formData.email}
-                onChange={(e) => handleChange('email', e.target.value)}
-                disabled={isLoading}
-            />
-            <Input
-                type="password"
-                placeholder="Mot de passe (min. 8 caractères) *"
-                bg="white"
-                color="black"
-                size="sm"
-                _placeholder={{ color: "gray.500" }}
-                value={formData.password}
-                onChange={(e) => handleChange('password', e.target.value)}
-                disabled={isLoading}
-            />
-            <Input
-                type="password"
-                placeholder="Confirmation mot de passe *"
-                bg="white"
-                color="black"
-                size="sm"
-                _placeholder={{ color: "gray.500" }}
-                value={formData.password_confirmation}
-                onChange={(e) => handleChange('password_confirmation', e.target.value)}
-                disabled={isLoading}
-            />
-          </Stack>
-        </Card.Body>
-
-        <Card.Footer justifyContent="center" pt="2">
-          <TicketLabel
-              text={isLoading ? "Inscription..." : "Créer son compte"}
-              onClick={handleSubmit}
+      <Card.Body pt="2" pb="3">
+        <Stack gap="3" w="full">
+          <Input
+            name="last_name"
+            placeholder="Nom *"
+            bg="white"
+            color="black"
+            size="sm"
+            _placeholder={{ color: "gray.500" }}
+            value={formData.last_name}
+            onChange={(e) => handleChange("last_name", e.target.value)}
+            disabled={isLoading}
           />
-        </Card.Footer>
-      </Card.Root>
+          <Input
+            name="first_name"
+            placeholder="Prénom *"
+            bg="white"
+            color="black"
+            size="sm"
+            _placeholder={{ color: "gray.500" }}
+            value={formData.first_name}
+            onChange={(e) => handleChange("first_name", e.target.value)}
+            disabled={isLoading}
+          />
+          <Input
+            name="email"
+            type="email"
+            placeholder="Email *"
+            bg="white"
+            color="black"
+            size="sm"
+            _placeholder={{ color: "gray.500" }}
+            value={formData.email}
+            onChange={(e) => handleChange("email", e.target.value)}
+            disabled={isLoading}
+          />
+          <Input
+            name="password"
+            type="password"
+            placeholder="Mot de passe (min. 8 caractères) *"
+            bg="white"
+            color="black"
+            size="sm"
+            _placeholder={{ color: "gray.500" }}
+            value={formData.password}
+            onChange={(e) => handleChange("password", e.target.value)}
+            disabled={isLoading}
+          />
+          <Input
+            name="password_confirm"
+            type="password"
+            placeholder="Confirmation mot de passe *"
+            bg="white"
+            color="black"
+            size="sm"
+            _placeholder={{ color: "gray.500" }}
+            value={formData.password_confirmation}
+            onChange={(e) =>
+              handleChange("password_confirmation", e.target.value)
+            }
+            disabled={isLoading}
+          />
+        </Stack>
+      </Card.Body>
+
+      <Card.Footer justifyContent="center" pt="2">
+        <TicketLabel
+          data-cy="login-submit-button"
+          text={isLoading ? "Inscription..." : "Créer son compte"}
+          onClick={handleSubmit}
+        />
+      </Card.Footer>
+    </Card.Root>
   );
 };

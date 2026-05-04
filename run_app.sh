@@ -28,7 +28,7 @@ setup_backend_service() {
     if [[ "$dir" == "core-service" ]]; then
         php artisan migrate:fresh --seed
     else
-        php artisan migrate
+        echo "Ignorer les migrations pour $dir (base de données gérée par core-service)"
     fi
 
     echo "--- Lancement de $dir sur le port $port ---"

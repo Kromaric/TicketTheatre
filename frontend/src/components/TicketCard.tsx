@@ -1,6 +1,6 @@
 import { Button, Card, Image, Text, Badge, Box, Stack } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
-import type {Spectacle } from "../services/core.service";
+import type { Spectacle } from "../services/core.service";
 import theatreImg from "../assets/theatre.png";
 
 interface TicketCardProps {
@@ -13,7 +13,7 @@ export const TicketCard = ({ spectacle }: TicketCardProps) => {
   //console.log('TicketCard rendering for:', spectacle.title);
 
   const handleReserve = () => {
-    console.log('Réserver spectacle:', spectacle.id);
+    console.log("Réserver spectacle:", spectacle.id);
     navigate(`/spectacle/${spectacle.id}`);
   };
 
@@ -40,7 +40,7 @@ export const TicketCard = ({ spectacle }: TicketCardProps) => {
               fontSize="lg"
               minH="60px"
             >
-              {spectacle.title || 'Sans titre'}
+              {spectacle.title || "Sans titre"}
             </Card.Title>
 
             {spectacle.category?.name && (
@@ -65,7 +65,7 @@ export const TicketCard = ({ spectacle }: TicketCardProps) => {
             objectFit="cover"
             display="block"
             onError={(e) => {
-              console.log('Image error for:', spectacle.title);
+              console.log("Image error for:", spectacle.title);
               (e.target as HTMLImageElement).src = theatreImg;
             }}
           />
@@ -79,8 +79,9 @@ export const TicketCard = ({ spectacle }: TicketCardProps) => {
 
             {spectacle.actors && spectacle.actors.length > 0 && (
               <Text color="black" fontSize="sm">
-                <strong>Acteurs:</strong> {spectacle.actors.slice(0, 2).join(", ")}
-                {spectacle.actors.length > 2 && '...'}
+                <strong>Acteurs:</strong>{" "}
+                {spectacle.actors.slice(0, 2).join(", ")}
+                {spectacle.actors.length > 2 && "..."}
               </Text>
             )}
 
@@ -93,7 +94,7 @@ export const TicketCard = ({ spectacle }: TicketCardProps) => {
             {spectacle.description && (
               <Text color="black" fontSize="sm">
                 {spectacle.description.substring(0, 100)}
-                {spectacle.description.length > 100 && '...'}
+                {spectacle.description.length > 100 && "..."}
               </Text>
             )}
           </Stack>
@@ -125,7 +126,12 @@ export const TicketCard = ({ spectacle }: TicketCardProps) => {
       </Card.Root>
     );
   } catch (error) {
-    console.error('Erreur dans TicketCard:', error, 'pour spectacle:', spectacle);
+    console.error(
+      "Erreur dans TicketCard:",
+      error,
+      "pour spectacle:",
+      spectacle,
+    );
     return (
       <Box bg="red.100" p={4} borderRadius="md">
         <Text color="red.800">Erreur d'affichage du spectacle</Text>

@@ -1,6 +1,6 @@
 describe("Parcours d'achat d'un billet", () => {
   beforeEach(() => {
-    // Connexion avant achat
+    // Connexion avant chaque test
     cy.login("jean.dupont@example.com", "password");
   });
 

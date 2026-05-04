@@ -36,6 +36,7 @@
 //   }
 // }
 
+// command pour se connecter
 Cypress.Commands.add("login", (email, password) => {
   cy.visit("/login");
 

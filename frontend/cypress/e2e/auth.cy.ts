@@ -2,7 +2,7 @@ describe("Authentification", () => {
   it("doit permettre à un utilisateur de s'inscrire", () => {
     cy.visit("/register");
 
-    // Ajuste les sélecteurs selon tes `name` ou `data-cy` dans Inscription.tsx
+    // on remplit les infos du nouvel utilisateur
     cy.get('input[name="first_name"]').type("Jean");
     cy.get('input[name="last_name"]').type("Dupont");
     cy.get('input[name="email"]').type("jean.dupont@test.com");
@@ -11,18 +11,19 @@ describe("Authentification", () => {
 
     cy.get('[data-cy="login-submit-button"]').click();
 
-    // Selon ton AuthContext, l'inscription connecte l'utilisateur directement.
-    // Vérifie ce qu'il se passe dans ton UI (redirection vers home ?)
+    // on verifie qu'on est bien rediriger sur la page de login
     cy.url().should("eq", Cypress.config().baseUrl + "/login");
   });
 
   it("doit permettre de se connecter", () => {
     cy.visit("/login");
 
+    // on remplit les infos d'un utilisateur existant
     cy.get('input[name="email"]').type("jean.dupont@example.com");
     cy.get('input[name="password"]').type("password");
     cy.get('[data-cy="login-submit-button"]').click();
-    // Vérifie la redirection post-login
+
+    // on verifie qu'on est bien redirige sru la page d'accueil
     cy.url().should("eq", Cypress.config().baseUrl + "/");
   });
 });
